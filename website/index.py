@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
 
-import sys, os, cgi, subprocess, psycopg2
+import sys, os, cgi, subprocess, psycopg2, re
 import cgitb
 root = "/home/jocelyn/polygon-generation"
 sys.path.append(root)
@@ -67,6 +67,12 @@ if rel_id == -1:
 
     sys.exit(0)
 
+def parse_pg_notices(notices):
+  s = u""
+  for n in notices:
+    s += n.decode("utf8")
+  s = s.replace("\n", "<br>\n")
+  return s
 
 utils.print_header("Polygon creation for id %d" % rel_id)
 
@@ -88,8 +94,8 @@ if x > 0 and y > 0 and z > 0:
     except psycopg2.InternalError:
         show(u"Error while generating polygon.")
         show(u"Message from postgresql server:<br>")
-        show(u"%s" % PgConn.notices)
-        raise
+        show(u"%s" % parse_pg_notices(PgConn.notices))
+        sys.exit(0)
 
     cmd = [os.path.join(root, "tools", "gen_image.sh"), "%d" % rel_id, "%s" % params]
     proc = subprocess.Popen(cmd)
@@ -109,9 +115,9 @@ if len(results) == 0 or refresh:
         PgCursor.execute(sql_create, (rel_id, ))
     except psycopg2.InternalError:
         show(u"Error while generating polygon.")
-        show(u"You could check the geometry through <a href='http://osm8.openstreetmap.fr//~osmbin/analyse-relation-open.py??%d'>a relation analyser</a>.<br>" % rel_id)
+        show(u"You could check the geometry through <a href='http://osm8.openstreetmap.fr//~osmbin/analyse-relation-open.py?%d'>a relation analyser</a>.<br>" % rel_id)
         show(u"Message from postgresql server:<br>")
-        show(u"%s" % PgConn.notices)
+        show(u"%s" % parse_pg_notices(PgConn.notices))
         sys.exit(0)
 
     PgCursor.execute(sql_list, (rel_id, ))
