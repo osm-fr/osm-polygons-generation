@@ -34,7 +34,8 @@ BEGIN
             deep_relation
             JOIN relation_members ON
                 relation_members.relation_id = deep_relation.id AND
-                relation_members.member_type = 'R'
+                relation_members.member_type = 'R' AND
+                relation_members.member_role != 'subarea'
   )
   SELECT
     ways.linestring
