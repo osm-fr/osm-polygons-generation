@@ -41,9 +41,9 @@ if rel_id == -1:
 
     show(u"<h1>%s</h1>" % ("List of generated polygons"))
 
-    show(u"<table>\n")
+    show(u"<table class='sortable'>\n")
     show(u"  <tr>\n")
-    show(u"    <th>%s</th>\n" % ("id"))
+    show(u"    <th class='sorttable_sorted'>%s<span id='sorttable_sortfwdind'>&nbsp;▾</span></th>\n" % ("id"))
     show(u"    <th>%s</th>\n" % ("timestamp"))
     show(u"    <th>%s</th>\n" % ("name"))
     show(u"    <th>%s</th>\n" % ("admin"))
@@ -129,9 +129,9 @@ if len(results) == 0 or refresh:
 
 show(u"<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
 
-show(u"<table>\n")
+show(u"<table class='sortable'>\n")
 show(u"  <tr>\n")
-show(u"    <th>%s</th>\n" % ("params"))
+show(u"    <th class='sorttable_sorted'>%s<span id='sorttable_sortfwdind'>&nbsp;▾</span></th>\n" % ("params"))
 show(u"    <th>%s</th>\n" % ("timestamp"))
 show(u"    <th>%s</th>\n" % ("NPoints"))
 show(u"    <th>%s</th>\n" % ("Length"))
