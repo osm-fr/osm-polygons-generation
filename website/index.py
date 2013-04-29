@@ -99,7 +99,7 @@ if x > 0 and y > 0 and z > 0:
 
     cmd = [os.path.join(root, "tools", "gen_image.sh"), "%d" % rel_id, "%s" % params]
     proc = subprocess.Popen(cmd)
-
+    sys.stdout.flush()
 
 sql_list = """select id, params, timestamp, ST_NPoints(geom) AS npoints,
               ST_MaxDistance(geom, geom) AS length
@@ -110,6 +110,7 @@ PgCursor.execute(sql_list, (rel_id, ))
 results = PgCursor.fetchall()
 
 if len(results) == 0 or refresh:
+    sys.stdout.flush()
     sql_create = "select create_polygon(%s);"
     try:
         PgCursor.execute(sql_create, (rel_id, ))
@@ -126,6 +127,7 @@ if len(results) == 0 or refresh:
 
     cmd = [os.path.join(root, "tools", "gen_image.sh"), "%d" % rel_id, "0"]
     proc = subprocess.Popen(cmd)
+    sys.stdout.flush()
 
 show(u"<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
 
