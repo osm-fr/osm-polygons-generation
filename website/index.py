@@ -76,17 +76,25 @@ def parse_pg_notices(notices):
 
 utils.print_header("Polygon creation for id %d" % rel_id)
 
-if x > 0 and y > 0 and z > 0:
+if y > 0 and z > 0:
+    sys.stdout.flush()
     params = "%f-%f-%f" % (x, y, z)
     sql_gen1 = "DELETE FROM polygons WHERE id = %s AND params = %s"
-    sql_gen2 = """INSERT INTO polygons VALUES
+    sql_gen2_1 = """INSERT INTO polygons VALUES
   (%s,
    %s,
    NOW(),
-   (SELECT ST_Union(geom, ST_Buffer(ST_SimplifyPreserveTopology(ST_Buffer(ST_SnapToGrid(st_buffer(geom, %s), %s), 0), %s), 0))
+   (SELECT """
+    sql_gen2_2 = """ST_Buffer(ST_SimplifyPreserveTopology(ST_Buffer(ST_SnapToGrid(st_buffer(geom, %s), %s), 0), %s), 0))
     FROM polygons
     WHERE id = %s AND params = '0')
   );"""
+    if x > 0:
+      sql_gen2 = sql_gen2_1 + "ST_Union(geom, " + sql_gen2_2
+    elif x == 0:
+      sql_gen2 = sql_gen2_1 + "(" + sql_gen2_2
+    else:
+      sql_gen2 = sql_gen2_1 + "ST_Intersection(geom, " + sql_gen2_2
     PgCursor.execute(sql_gen1, (rel_id, params))
     try:
         PgCursor.execute(sql_gen2, (rel_id, params,
