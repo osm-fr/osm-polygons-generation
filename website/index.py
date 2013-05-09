@@ -34,17 +34,20 @@ if rel_id == -1:
          from polygons
          JOIN relations ON relations.id = polygons.id
          WHERE params = '0'
-         ORDER BY id"""
+         ORDER BY timestamp DESC
+         LIMIT 20"""
     PgCursor.execute(sql_list)
 
     results = PgCursor.fetchall()
 
     show(u"<h1>%s</h1>" % ("List of generated polygons"))
 
+    show(u"Latest generated polygons<br><br>")
+
     show(u"<table class='sortable'>\n")
     show(u"  <tr>\n")
-    show(u"    <th class='sorttable_sorted'>%s<span id='sorttable_sortfwdind'>&nbsp;▾</span></th>\n" % ("id"))
-    show(u"    <th>%s</th>\n" % ("timestamp"))
+    show(u"    <th>%s</th>\n" % ("id"))
+    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>\n" % ("timestamp"))
     show(u"    <th>%s</th>\n" % ("name"))
     show(u"    <th>%s</th>\n" % ("admin"))
     show(u"  </tr>\n")
