@@ -6,6 +6,13 @@ CREATE TABLE polygons (
 );
 ALTER TABLE ONLY polygons ADD CONSTRAINT polygons_pkey PRIMARY KEY (id, params);
 
+CREATE TABLE polygons_user (
+    name character varying(40) NOT NULL,
+    "timestamp" timestamp without time zone,
+    geom public.geometry
+);
+ALTER TABLE ONLY polygons_user ADD CONSTRAINT polygons_user_pkey PRIMARY KEY (name);
+
 CREATE OR REPLACE FUNCTION ends(linestring geometry) RETURNS SETOF geometry AS $$
 DECLARE BEGIN
     RETURN NEXT ST_PointN(linestring,1);
