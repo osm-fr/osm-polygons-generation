@@ -17,35 +17,39 @@ if "name" not in form and "poly" not in form:
     utils.print_header("Importer of .poly files")
     show(u"<h1>%s</h1>" % ("Import of .poly files"))
     show(u"<br><br>\n")
-    show(u"<form method='POST' action=''>")
+    show(u"<form method='POST' action=''  enctype='multipart/form-data'>")
     show(u"<label for='name'>%s</label>" % "Name")
     show(u"<input type='text' name='name' id='name'>")
     show(u"<label for='poly'>%s</label>" % ".poly file")
     show(u"<input type='file' name='poly' id='poly'>")
     show(u"<input type='submit'>")
     show(u"</form>")
+    utils.print_tail()
     sys.exit(0)
 
+import cgitb
+cgitb.enable()
 
-name = int(form.getvalue("name", -1))
-poly = str(form.getvalue("poly", -1))
+name = str(form.getvalue("name", -1))
+poly_file = form["poly"].file
 
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
-show(u"Content-Type: text/plain; charset=utf-8")
-print
+utils.print_header("Importer of .poly files")
+
+#show(u"Content-Type: text/plain; charset=utf-8")
+#print
 
 char_set = string.ascii_lowercase + string.digits
-name += ''.join(random.sample(char_set*6,6))
+name += "_" + (''.join(random.sample(char_set*6,6)))
 
-show(u"importing as %s" % name)
-wkt = OsmGeom.read_multipolygon_wkt(sys.stdout, wkt)
+show(u"importing as <span id='name'>%s</span>" % name)
+wkt = OsmGeom.read_multipolygon_wkt(poly_file)
 
 sql = """INSERT INTO polygons_user
-         VALUES (%s, %s, NOW())"""
-PgCursor.execute(sql, (name, poly))
+         VALUES (%s, NOW(), ST_GeomFromText(%s, 4326))"""
+PgCursor.execute(sql, (name, wkt))
 
-results = PgCursor.fetchall()
-
-
+PgConn.commit()
+PgConn.close()
