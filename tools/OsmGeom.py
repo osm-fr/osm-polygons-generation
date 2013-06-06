@@ -54,6 +54,8 @@ def read_polygon_wkt(f):
 # Last line: END
 def read_multipolygon_wkt(f):
 
+    dummy = f.readline()
+
     polygons = []
     while True:
         dummy = f.readline()
