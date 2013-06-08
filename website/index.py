@@ -120,7 +120,13 @@ PgCursor.execute(sql_list, (rel_id, ))
 
 results = PgCursor.fetchall()
 
-if len(results) == 0 or refresh:
+found_param_0 = False
+
+for res in results:
+    if res["params"] == "0":
+        found_param_0 = True
+
+if len(results) == 0 or refresh or not found_param_0:
     sys.stdout.flush()
     sql_create = "select create_polygon(%s);"
     try:
