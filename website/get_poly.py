@@ -9,6 +9,7 @@ from tools import utils
 form      = cgi.FieldStorage()
 rel_id    = int(form.getvalue("id", -1))
 params    = str(form.getvalue("params", -1))
+name      = str(form.getvalue("name", ""))
 
 show = utils.show
 
@@ -18,9 +19,27 @@ PgCursor  = PgConn.cursor()
 show(u"Content-Type: text/plain; charset=utf-8")
 print
 
-sql = """select ST_AsText(geom)
-         from polygons where id = %s AND params = %s"""
-PgCursor.execute(sql, (rel_id, params))
+if name != "" and rel_id != -1:
+  sql = """select ST_AsText(ST_Union((SELECT geom from polygons
+                                      where id = %s AND params = %s),
+                                     (SELECT geom from polygons_user
+                                      WHERE name = %s)))"""
+  sql_p = (rel_id, params, name)
+
+elif name == "" and rel_id != -1:
+  sql = """select ST_AsText(geom)
+           from polygons where id = %s AND params = %s"""
+  sql_p = (rel_id, params)
+
+elif name != "" and rel_id == -1:
+  sql = """select ST_AsText(geom)
+           from polygons_user where name = %s"""
+  sql_p = (name, )
+
+else:
+  show(u"Error: id or name should be given")
+
+PgCursor.execute(sql, sql_p)
 
 results = PgCursor.fetchall()
 
