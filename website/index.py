@@ -108,10 +108,6 @@ if y > 0 and z > 0:
         show(u"%s" % parse_pg_notices(PgConn.notices))
         sys.exit(0)
 
-    cmd = [os.path.join(root, "tools", "gen_image.sh"), "%d" % rel_id, "%s" % params]
-    proc = subprocess.Popen(cmd)
-    sys.stdout.flush()
-
 sql_list = """select id, params, timestamp, ST_NPoints(geom) AS npoints,
               ST_MaxDistance(geom, geom) AS length
          from polygons where id = %s
@@ -142,10 +138,6 @@ if len(results) == 0 or refresh or not found_param_0:
         
     results = PgCursor.fetchall()
 
-    cmd = [os.path.join(root, "tools", "gen_image.sh"), "%d" % rel_id, "0"]
-    proc = subprocess.Popen(cmd)
-    sys.stdout.flush()
-
 show(u"<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
 
 show(u"<table class='sortable'>\n")
@@ -171,7 +163,7 @@ for res in results:
     show(u"    <td><a href='get_wkt.py?id=%d&amp;params=%s'>WKT</a></td>\n" % (rel_id, str(res["params"])))
     show(u"    <td><a href='get_geojson.py?id=%d&amp;params=%s'>GeoJSON</a></td>\n" % (rel_id, str(res["params"])))
     show(u"    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>\n" % (rel_id, str(res["params"])))
-    show(u"    <td><a href='images/%d/%s.png'>image</a></td>\n" % (rel_id, str(res["params"])))
+    show(u"    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>\n" % (rel_id, str(res["params"])))
     show(u"  </tr>\n")
 
 show(u"</table>\n")
