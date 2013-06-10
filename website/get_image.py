@@ -3,6 +3,7 @@
 
 import cgi
 import cgitb
+import math
 import os
 import sys
 import tempfile
@@ -70,17 +71,30 @@ fig = pyplot.figure(1, dpi=100)
 
 (minx, miny, maxx, maxy) = draw_polygon(rel_id, params, name, "blue", zorder=10)
 
-fig_width = 0.5*(maxx-minx)
-fig_height = 0.75*(maxy-miny)
+diff_x = maxx - minx
+diff_y = maxy - miny
 
-if fig_width > fig_height:
-  fig_height = int(fig_height / fig_width * 10)
+# TODO: this should depend on the latitude
+diff_x_fixed = diff_x
+diff_y_fixed = diff_y / math.cos(math.radians((miny+maxy)/2))
+
+if diff_x_fixed > diff_y_fixed:
+  fig_height = int(diff_y_fixed / diff_x_fixed * 10)
   fig_width = 10
 else:
-  fig_width = int(fig_width / fig_width * 10)
+  fig_width = int(diff_x_fixed / diff_y_fixed * 10)
   fig_height = 10
 
+if fig_width > 200:
+  fig_width = 200
+if fig_height > 200:
+  fig_height = 200
+
 fig.set_size_inches(fig_width, fig_height)
+ax = fig.add_subplot(111)
+ax.set_xlim(left=minx - 0.05*diff_x, right=maxx + 0.05*diff_x)
+ax.set_ylim(bottom=miny - 0.05*diff_y, top=maxy + 0.05*diff_y)
+ax.autoscale_view()
 
 if rel_id != -1 and (params != 0 or name != ""):
   draw_polygon(rel_id, "0", "", "green", zorder=1)
@@ -88,6 +102,7 @@ if rel_id != -1 and (params != 0 or name != ""):
 if name != "":
   draw_polygon(-1, "", name, "orange", zorder=2)
 
+fig.tight_layout()
 
 import cStringIO
 imgData = cStringIO.StringIO()
