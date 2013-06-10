@@ -51,5 +51,11 @@ sql = """INSERT INTO polygons_user
          VALUES (%s, NOW(), ST_GeomFromText(%s, 4326))"""
 PgCursor.execute(sql, (name, wkt))
 
+show(u"<br>")
+show(u"Polygon can be seen on <a href='show_polygon.py?name=%s'>this page</a>." % name)
+
+###########################################################################
+utils.print_tail()
+
 PgConn.commit()
 PgConn.close()

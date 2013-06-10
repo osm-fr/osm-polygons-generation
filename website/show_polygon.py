@@ -20,7 +20,6 @@ PgCursor  = PgConn.cursor()
 if rel_id == -1 and name == "":
     utils.print_header("Show polygon")
     show(u"<h1>%s</h1>" % ("Show polygon"))
-    show(u"<br><br>\n")
     show(u"<form method='GET' action=''>")
     show(u"<label for='id'>%s</label>" % "Id of relation")
     show(u"<input type='text' name='id' id='id'>")
@@ -128,12 +127,26 @@ if rel_id != -1 and name != "" and osm_results and user_results:
         show(u"    <td>" + str(o_res["params"]) + "</td>\n")
         for u_res in user_results:
             show(u"    <td>")
-            show(u"<a href='get_poly.py?id=%d&amp;params=%s&amp;name=%s' title='poly'>p</a>\n" % (rel_id, o_res["params"], u_res["name"]))
-            show(u"<a href='get_image.py?id=%d&amp;params=%s&amp;name=%s' title='image'>i</a>\n" % (rel_id, o_res["params"], u_res["name"]))
+            show(u"<a href='get_poly.py?id=%d&amp;params=%s&amp;name=%s' title='poly'>poly</a>\n" % (rel_id, o_res["params"], u_res["name"]))
+            show(u"<a href='get_image.py?id=%d&amp;params=%s&amp;name=%s' title='image'>image</a>\n" % (rel_id, o_res["params"], u_res["name"]))
             show(u"    </td>")
         show(u"  </tr>\n")
     show(u"</table>\n")
- 
+
+if rel_id == -1 or name == "":
+    show(u"<br><br>\n")
+    show(u"<h1>%s</h1>" % ("Show polygon"))
+    show(u"<form method='GET' action=''>")
+    show(u"<label for='id'>%s</label>" % "Id of relation")
+    if rel_id == -1:
+        show(u"<input type='text' name='id' id='id'>")
+    else:
+        show(u"<input type='text' name='id' id='id' value='%d'>", rel_id)
+    show(u"<br>")
+    show(u"<label for='name'>%s</label>" % "Name of user polygon")
+    show(u"<input type='text' name='name' id='name' value='%s'>" % name)
+    show(u"<input type='submit'>")
+    show(u"</form>")
 
 ###########################################################################
 utils.print_tail()

@@ -23,12 +23,36 @@ PgCursor  = PgConn.cursor()
 if rel_id == -1:
     utils.print_header("Polygon creation")
     show(u"<h1>%s</h1>" % ("Polygon creation"))
-    show(u"<br><br>\n")
+    show(u"<p>This will generate the whole geometry of the given OSM relation id, with the corresponding sub-relations. When the geometry is available, it is possible to generate simplified geometries from this one, and export them as .poly, GeoJSON, WKT or image formats.</p>")
     show(u"<form method='GET' action=''>")
     show(u"<label for='id'>%s</label>" % "Id of relation")
     show(u"<input type='text' name='id' id='id'>")
     show(u"<input type='submit'>")
     show(u"</form>")
+    show(u"<br>\n")
+
+    show(u"<h1>%s</h1>" % ("Import of an user polygon"))
+    show(u"<p>Use this if you want to import your own .poly file, and do union operations with OSM relations.</p>")
+    show(u"<form method='POST' action='import_poly.py' enctype='multipart/form-data'>")
+    show(u"<label for='name'>%s</label>" % "Name")
+    show(u"<input type='text' name='name' id='name'>")
+    show(u"<label for='poly'>%s</label>" % ".poly file")
+    show(u"<input type='file' name='poly' id='poly'>")
+    show(u"<input type='submit'>")
+    show(u"</form>")
+    show(u"<br>\n")
+
+    show(u"<h1>%s</h1>" % ("List of recently generated polygons"))
+
+    show(u"<p>Here are the latest generated polygons with this application.</p>")
+
+    show(u"<table class='sortable'>\n")
+    show(u"  <tr>\n")
+    show(u"    <th>%s</th>\n" % ("id"))
+    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>\n" % ("timestamp"))
+    show(u"    <th>%s</th>\n" % ("name"))
+    show(u"    <th>%s</th>\n" % ("admin"))
+    show(u"  </tr>\n")
 
     sql_list = """select polygons.id, timestamp, relations.tags
          from polygons
@@ -39,18 +63,6 @@ if rel_id == -1:
     PgCursor.execute(sql_list)
 
     results = PgCursor.fetchall()
-
-    show(u"<h1>%s</h1>" % ("List of generated polygons"))
-
-    show(u"Latest generated polygons<br><br>")
-
-    show(u"<table class='sortable'>\n")
-    show(u"  <tr>\n")
-    show(u"    <th>%s</th>\n" % ("id"))
-    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>\n" % ("timestamp"))
-    show(u"    <th>%s</th>\n" % ("name"))
-    show(u"    <th>%s</th>\n" % ("admin"))
-    show(u"  </tr>\n")
 
     for res in results:
         show(u"  <tr>\n")
@@ -67,6 +79,33 @@ if rel_id == -1:
         show(u"  </tr>\n")
 
     show(u"</table>\n")
+
+    show(u"<h1>%s</h1>" % ("List of recently uploaded polygons"))
+
+    show(u"<p>Here are the latest uploaded polygons with this application.</p>")
+
+    show(u"<table class='sortable'>\n")
+    show(u"  <tr>\n")
+    show(u"    <th>%s</th>\n" % ("name"))
+    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>\n" % ("timestamp"))
+    show(u"  </tr>\n")
+
+    sql_list = """select name, timestamp
+         from polygons_user
+         ORDER BY timestamp DESC
+         LIMIT 20"""
+    PgCursor.execute(sql_list)
+
+    results = PgCursor.fetchall()
+
+    for res in results:
+        show(u"  <tr>\n")
+        show(u"    <td><a href='show_polygon.py?name=%s'>%s</a></td>\n" % (res["name"], res["name"]))
+        show(u"    <td>" + str(res["timestamp"]) + "</td>\n")
+        show(u"  </tr>\n")
+
+    show(u"</table>\n")
+
 
     sys.exit(0)
 
