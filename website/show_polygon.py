@@ -66,7 +66,7 @@ if rel_id != -1:
             show(u"    <td><a href='get_wkt.py?id=%d&amp;params=%s'>WKT</a></td>\n" % (rel_id, str(res["params"])))
             show(u"    <td><a href='get_geojson.py?id=%d&amp;params=%s'>GeoJSON</a></td>\n" % (rel_id, str(res["params"])))
             show(u"    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>\n" % (rel_id, str(res["params"])))
-            show(u"    <td><a href='images/%d/%s.png'>image</a></td>\n" % (rel_id, str(res["params"])))
+            show(u"    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>\n" % (rel_id, str(res["params"])))
             show(u"  </tr>\n")
         
         show(u"</table>\n")
