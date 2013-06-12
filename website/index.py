@@ -214,7 +214,15 @@ show(u"</form>")
 
 show(u"<h1>%s</h1>" % ("Generate a simplified polygon"))
 
-show(u"ST_Simplify(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z))")
+show(u"<p>X, Y, Z are parameters for the following postgis equation. The default values are chosen according to the size of the original geometry to give a slighty bigger geometry, without too many nodes.</p>")
+show(u"Note that:")
+show(u"<ul>")
+show(u"<li>X > 0 will give a polygon bigger than the original geometry, and guaranteed to contain it.")
+show(u"<li>X = 0 will give a polygon similar to the original geometry.")
+show(u"<li>X < 0 will give a polygon smaller than the original geometry, and guaranteed to be smaller.")
+show(u"</ul>")
+
+show(u"<p>ST_Simplify(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z))</p>")
 
 if geom_length >= 10:
     rec_x = 0.04
