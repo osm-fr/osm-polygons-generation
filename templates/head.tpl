@@ -6,6 +6,7 @@ Content-Type: text/html; charset=utf-8
 <head>
   <title>#title#</title>
   <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" type="text/css" href="style.css">
   <script src="sorttable.js" type="text/javascript"></script>
 </head>
