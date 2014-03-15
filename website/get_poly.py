@@ -16,8 +16,6 @@ show = utils.show
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
-show(u"Content-Type: text/plain; charset=utf-8")
-print
 
 if name != "" and rel_id != -1:
   sql = """select ST_AsText(ST_Union((SELECT geom from polygons
@@ -37,11 +35,25 @@ elif name != "" and rel_id == -1:
   sql_p = (name, )
 
 else:
+  show(u"Status: 500")
+  show(u"Content-Type: text/plain; charset=utf-8")
+  print
   show(u"Error: id or name should be given")
+  sys.exit(0)
 
 PgCursor.execute(sql, sql_p)
 
 results = PgCursor.fetchall()
+if not results:
+  show(u"Status: 500")
+  show(u"Content-Type: text/plain; charset=utf-8")
+  print
+  show(u"Error when getting polygon from database")
+  sys.exit(0)
+
+else:
+  show(u"Content-Type: text/plain; charset=utf-8")
+  print
 
 wkt = results[0][0]
 
