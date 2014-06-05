@@ -7,8 +7,8 @@ sys.path.append(root)
 from tools import utils
 
 form      = cgi.FieldStorage()
-rel_id    = int(form.getvalue("id", -1))
-params    = str(form.getvalue("params", -1))
+rel_id    = [int(i) for i in form.getvalue("id", -1).split(",")]
+params    = str(form.getvalue("params", 0))
 
 show = utils.show
 
@@ -18,11 +18,11 @@ PgCursor  = PgConn.cursor()
 show(u"Content-Type: text/plain; charset=utf-8")
 print
 
-sql = """select ST_AsGeoJSON(geom)
-         from polygons where id = %s AND params = %s"""
-PgCursor.execute(sql, (rel_id, params))
+sql = """select ST_AsGeoJSON(ST_Collect(geom))
+         from polygons where id IN %s AND params = %s"""
+PgCursor.execute(sql, (tuple(rel_id), params))
 
 results = PgCursor.fetchall()
 
 for res in results:
-    show(u"%s" % res[0])
+    print res[0]
