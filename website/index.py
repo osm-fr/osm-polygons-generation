@@ -177,7 +177,11 @@ if len(results) == 0 or refresh or not found_param_0:
         PgCursor.execute(sql_create, (rel_id, ))
     except psycopg2.InternalError:
         show(u"Error while generating polygon.")
-        show(u"You could check the geometry through <a href='http://osm8.openstreetmap.fr//~osmbin/analyse-relation-open.py?%d'>a relation analyser</a>.<br>" % rel_id)
+        show(u"You could check the geometry through an analyser:<br>")
+        show(u"<ul>")
+        show(u"<li><a href='http://download.openstreetmap.fr/cgi-bin/analyse-relation-open.py?%d'>analyser using an internal database</a>." % rel_id)
+        show(u"<li><a href='http://analyser.openstreetmap.fr/cgi-bin/index.py?relation=%d'>analyser using OSM API (slower)</a>." % rel_id)
+        show(u"</ul>")
         show(u"Message from postgresql server:<br>")
         show(u"%s" % parse_pg_notices(PgConn.notices))
         sys.exit(0)
