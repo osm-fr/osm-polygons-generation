@@ -110,9 +110,18 @@ if rel_id == -1:
     sys.exit(0)
 
 def parse_pg_notices(notices):
+  re_lat_lon = re.compile("(.*point) ([-0-9.]*)f ([-0-9.]*)f(.*)$")
   s = u""
   for n in notices:
-    s += n.decode("utf8")
+    line = n.decode("utf8")
+    m = re_lat_lon.match(line)
+    if m:
+      lon = float(m.group(2))
+      lat = float(m.group(3))
+      params = (m.group(1), lon-0.005, lon+0.005, lat+0.005, lat-0.005, m.group(2) + "f " + m.group(3) + "f", m.group(4))
+      line = re_lat_lon.sub(line, "%s <a target='josm' href='http://127.0.0.1:8111/zoom?left=%f&right=%f&top=%f&bottom=%f'>%s</a>%s\n" % params)
+    s += line
+
   s = s.replace("\n", "<br>\n")
   return s
 
