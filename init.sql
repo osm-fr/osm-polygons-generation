@@ -29,6 +29,8 @@ DECLARE
 BEGIN
   DELETE FROM polygons WHERE id = rel_id;
 
+  DROP TABLE IF EXISTS tmp_way_poly;
+
   -- recup des way des relations
   CREATE TEMP TABLE tmp_way_poly AS
   WITH RECURSIVE deep_relation(id) AS (
@@ -44,8 +46,8 @@ BEGIN
                 relation_members.member_type = 'R' AND
                 relation_members.member_role != 'subarea'
   )
-  SELECT
-    ways.linestring
+  SELECT DISTINCT ON (ways.id)
+    ways.linestring, ways.id
   FROM
     deep_relation
     JOIN relation_members ON
@@ -58,16 +60,16 @@ BEGIN
   SELECT INTO ok 't';
 
   FOR line in SELECT
-             ST_X(geom) AS x, ST_Y(geom) AS y
+             ST_X(geom) AS x, ST_Y(geom) AS y, string_agg(id::varchar(255), ' ') AS id
            FROM
-             (SELECT ends(linestring) AS geom FROM tmp_way_poly) AS d
+             (SELECT ends(linestring) AS geom, id FROM tmp_way_poly) AS d
            GROUP BY
              geom
            HAVING
              COUNT(*) != 2
   LOOP
     SELECT INTO ok 'f';
-    RAISE NOTICE 'missing connexion at point %f %f', line.x, line.y;
+    RAISE NOTICE 'missing connexion at point %f %f - ways: %', line.x, line.y, line.id;
   END LOOP;
 
   INSERT INTO polygons
