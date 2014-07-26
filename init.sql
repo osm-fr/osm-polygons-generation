@@ -44,7 +44,8 @@ BEGIN
             JOIN relation_members ON
                 relation_members.relation_id = deep_relation.id AND
                 relation_members.member_type = 'R' AND
-                relation_members.member_role != 'subarea'
+                relation_members.member_role != 'subarea' AND
+                relation_members.member_role != 'land_area'
   )
   SELECT DISTINCT ON (ways.id)
     ways.linestring, ways.id
