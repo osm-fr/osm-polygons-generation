@@ -110,7 +110,7 @@ if rel_id == -1:
     sys.exit(0)
 
 def parse_pg_notices(notices):
-  re_lat_lon = re.compile("(.*point) ([-0-9.]*)f ([-0-9.]*)f(.*)$")
+  re_lat_lon = re.compile("(.*point) ([-0-9.]*)f ([-0-9.]*)f - ways: (.*)$")
   s = u""
   for n in notices:
     line = n.decode("utf8")
@@ -118,8 +118,11 @@ def parse_pg_notices(notices):
     if m:
       lon = float(m.group(2))
       lat = float(m.group(3))
-      params = (m.group(1), lon-0.005, lon+0.005, lat+0.005, lat-0.005, m.group(2) + "f " + m.group(3) + "f", m.group(4))
-      line = re_lat_lon.sub(line, "%s <a target='josm' href='http://127.0.0.1:8111/zoom?left=%f&right=%f&top=%f&bottom=%f'>%s</a>%s\n" % params)
+      ways = m.group(4).split(" ")
+      ways = ["<a target='josm' href='http://127.0.0.1:8111/load_and_zoom?left=%f&right=%f&top=%f&bottom=%f&select=way%d'>%d</a>" % (lon-0.005, lon+0.005, lat+0.005, lat-0.005, int(i), int(i)) for i in ways]
+      ways = " ".join(ways)
+      params = (m.group(1), lon-0.0005, lon+0.0005, lat+0.0005, lat-0.0005, m.group(2) + "f " + m.group(3) + "f", ways)
+      line = re_lat_lon.sub(line, "%s <a target='josm' href='http://127.0.0.1:8111/zoom?left=%f&right=%f&top=%f&bottom=%f'>%s</a> - ways: %s\n" % params)
     s += line
 
   s = s.replace("\n", "<br>\n")
