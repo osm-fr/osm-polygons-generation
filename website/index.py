@@ -20,9 +20,19 @@ cgitb.enable()
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
+def get_state_timestamp(name):
+    f = open(name)
+    for line in f:
+        (key, sep, value) = line.partition("=")
+        if key.strip() == "timestamp":
+            return value.replace("\\", "")
+
+    return ""
+
 if rel_id == -1:
     utils.print_header("Polygon creation")
     show(u"<h1>%s</h1>" % ("Polygon creation"))
+    show(u"<p>Database was last updated on: %s</p>" % get_state_timestamp("/data/work/osmosis/state.txt"))
     show(u"<p>This will generate the whole geometry of the given OSM relation id, with the corresponding sub-relations. When the geometry is available, it is possible to generate simplified geometries from this one, and export them as .poly, GeoJSON, WKT or image formats.</p>")
     show(u"<form method='GET' action=''>")
     show(u"<label for='id'>%s</label>" % "Id of relation")
