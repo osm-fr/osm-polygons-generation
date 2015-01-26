@@ -32,7 +32,7 @@ def get_state_timestamp(name):
 if rel_id == -1:
     utils.print_header("Polygon creation")
     show(u"<h1>%s</h1>" % ("Polygon creation"))
-    show(u"<p>Database was last updated on: %s</p>" % get_state_timestamp("/data/work/osmosis/state.txt"))
+    show(u"<p>Database was last updated on: %s</p>" % get_state_timestamp("/data/work/osmbin/replication/state.txt"))
     show(u"<p>This will generate the whole geometry of the given OSM relation id, with the corresponding sub-relations. When the geometry is available, it is possible to generate simplified geometries from this one, and export them as .poly, GeoJSON, WKT or image formats.</p>")
     show(u"<form method='GET' action=''>")
     show(u"<label for='id'>%s</label>" % "Id of relation")
@@ -185,7 +185,12 @@ for res in results:
 
 if len(results) == 0 or refresh or not found_param_0:
     sys.stdout.flush()
-    sql_create = "select create_polygon(%s);"
+    PgCursor.execute("DROP TABLE IF EXISTS tmp_way_poly_%d" % rel_id)
+    PgCursor.execute("CREATE TABLE tmp_way_poly_%d (id integer, linestring geometry);" % rel_id)
+    cmd = ("../tools/OsmBin.py", "--read", "/data/work/osmbin/data/", "relation_geom", "%d" % rel_id)
+    run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    PgCursor.copy_from(run.stdout, "tmp_way_poly_%d" % rel_id)
+    sql_create = "select create_polygon2(%s);"
     try:
         PgCursor.execute(sql_create, (rel_id, ))
     except psycopg2.InternalError:
