@@ -24,7 +24,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as pyplot
 
 form      = cgi.FieldStorage()
-rel_id    = int(form.getvalue("id", -1))
+rel_id    = [int(i) for i in form.getvalue("id", "-1").split(",")]
 params    = str(form.getvalue("params", 0))
 name      = str(form.getvalue("name", ""))
 
@@ -34,19 +34,19 @@ PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
 def draw_polygon(rel_id, params, name, color, zorder=0, label=""):
-  if name != "" and rel_id != -1:
-    sql = """select ST_AsText(ST_Union((SELECT geom from polygons
-                                        where id = %s AND params = %s),
+  if name != "" and rel_id != [-1]:
+    sql = """select ST_AsText(ST_Union((SELECT ST_Union(geom) from polygons
+                                        where id IN %s AND params = %s),
                                        (SELECT geom from polygons_user
                                         WHERE name = %s)))"""
-    sql_p = (rel_id, params, name)
+    sql_p = (tuple(rel_id), params, name)
   
-  elif name == "" and rel_id != -1:
-    sql = """select ST_AsText(geom)
-             from polygons where id = %s AND params = %s"""
-    sql_p = (rel_id, params)
+  elif name == "" and rel_id != [-1]:
+    sql = """select ST_AsText(ST_Union(geom))
+             from polygons where id IN %s AND params = %s"""
+    sql_p = (tuple(rel_id), params)
   
-  elif name != "" and rel_id == -1:
+  elif name != "" and rel_id == [-1]:
     sql = """select ST_AsText(geom)
              from polygons_user where name = %s"""
     sql_p = (name, )
@@ -74,9 +74,9 @@ def draw_polygon(rel_id, params, name, color, zorder=0, label=""):
 
 fig = pyplot.figure(1, dpi=100)
 
-if rel_id != -1 and name != "":
+if rel_id != [-1] and name != "":
   label = "union"
-elif rel_id == -1:
+elif rel_id == [-1]:
   label = "user polygon"
 elif params != "0":
   label = "simplified geometry"
@@ -110,11 +110,11 @@ ax.set_xlim(left=minx - 0.05*diff_x, right=maxx + 0.05*diff_x)
 ax.set_ylim(bottom=miny - 0.05*diff_y, top=maxy + 0.05*diff_y)
 ax.autoscale_view()
 
-if rel_id != -1 and (params != "0" or name != ""):
+if rel_id != [-1] and (params != "0" or name != ""):
   draw_polygon(rel_id, "0", "", "green", zorder=1, label="base geometry")
 
-if name != "" and rel_id != -1:
-  draw_polygon(-1, "", name, "orange", zorder=2, label="user polygon")
+if name != "" and rel_id != [-1]:
+  draw_polygon([-1], "", name, "orange", zorder=2, label="user polygon")
 
 pyplot.legend(loc='upper center', ncol=5, frameon=True,
               bbox_to_anchor=(0.5, 1), bbox_transform=pyplot.gcf().transFigure)
