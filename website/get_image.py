@@ -9,7 +9,7 @@ import sys
 import tempfile
 
 cgitb.enable()
-root = "/home/jocelyn/polygon-generation"
+root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)
 from tools import utils
 

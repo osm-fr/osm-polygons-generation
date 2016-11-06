@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import sys, os, cgi, re
-root = "/home/jocelyn/polygon-generation"
+root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)
 from tools import utils
 

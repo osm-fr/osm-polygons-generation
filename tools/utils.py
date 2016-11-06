@@ -9,9 +9,9 @@ from xml.sax import make_parser, handler
 ################################################################################
 
 root_folder       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-pg_user           = "jocelyn"
-pg_pass           = "aueuea"
-pg_base           = "osm"
+pg_user           = "polygons"
+pg_pass           = "-polygons-"
+pg_base           = "polygons"
 
 def get_dbconn():
     import psycopg2.extras

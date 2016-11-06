@@ -3,7 +3,7 @@
 
 import sys, os, cgi, subprocess, psycopg2, re
 import cgitb
-root = "/home/jocelyn/polygon-generation"
+root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)
 from tools import utils
 

@@ -4,7 +4,7 @@
 import sys, os, cgi, re
 import random
 import string
-root = "/home/jocelyn/polygon-generation"
+root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)
 from tools import utils
 from tools import OsmGeom
