@@ -12,7 +12,7 @@ Using this tool, you can get latest polygons from OSM, optionally simplified usi
 * For every version of the relation:
  * Display shape of polygon using image
  * Basic stats (number of nodes, lenght) 
- * Export to WKT, poly adn GeoJSON
+ * Export to WKT, poly and GeoJSON
 * More
 
 ## Live instances 
