@@ -13,6 +13,13 @@ CREATE TABLE polygons_user (
 );
 ALTER TABLE ONLY polygons_user ADD CONSTRAINT polygons_user_pkey PRIMARY KEY (name);
 
+CREATE TABLE relations (
+    id integer NOT NULL,
+    tags hstore
+);
+ALTER TABLE ONLY relations ADD CONSTRAINT relations_pkey PRIMARY KEY (id);
+
+
 CREATE OR REPLACE FUNCTION ends(linestring geometry) RETURNS SETOF geometry AS $$
 DECLARE BEGIN
     RETURN NEXT ST_PointN(linestring,1);

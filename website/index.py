@@ -66,7 +66,7 @@ if rel_id == -1:
 
     sql_list = """select polygons.id, timestamp, relations.tags
          from polygons
-         JOIN relations ON relations.id = polygons.id
+         LEFT JOIN relations ON relations.id = polygons.id
          WHERE params = '0'
          ORDER BY timestamp DESC
          LIMIT 20"""
@@ -78,11 +78,11 @@ if rel_id == -1:
         show(u"  <tr>\n")
         show(u"    <td><a href='?id=%d'>%d</a></td>\n" % (res["id"], res["id"]))
         show(u"    <td>" + str(res["timestamp"]) + "</td>\n")
-        if "name" in res["tags"]:
+        if res["tags"] is not None and "name" in res["tags"]:
             show(u"    <td>" + res["tags"]["name"] + "</td>\n")
         else:
             show(u"    <td></td>\n")
-        if "admin_level" in res["tags"]:
+        if res["tags"] is not None and "admin_level" in res["tags"]:
             show(u"    <td>" + res["tags"]["admin_level"] + "</td>\n")
         else:
             show(u"    <td></td>\n")
@@ -207,6 +207,13 @@ if len(results) == 0 or refresh or not found_param_0:
     PgCursor.execute(sql_list, (rel_id, ))
         
     results = PgCursor.fetchall()
+
+    import ast
+    cmd = ("../tools/OsmBin.py", "--read", "/data/work/osmbin/data/", "relation", "%d" % rel_id)
+    run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    j = ast.literal_eval(run.stdout.read())
+    PgCursor.execute("DELETE FROM relations WHERE id = %s", (rel_id, ))
+    PgCursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, j["tag"]))
 
 show(u"<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
 
