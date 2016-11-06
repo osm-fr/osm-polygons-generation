@@ -137,6 +137,7 @@ BEGIN
                         FROM tmp_way_poly) as d
                 ) as c
          ));
+  UPDATE polygons SET geom = ST_SetSRID(geom, 4326) WHERE id = rel_id;
 
   RETURN st_npoints(geom) FROM polygons WHERE id = rel_id;
 END
