@@ -1,4 +1,4 @@
-osm-polygons-generation
+OSM-POLYGON-GENERATIONS
 =======================
 
 Website to generate polygons for recursive relations in OpenStreetMap
