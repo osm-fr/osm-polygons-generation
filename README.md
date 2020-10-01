@@ -1,7 +1,7 @@
 osm-polygons-generation
 =======================
 
-Website to generate polygons for recursive relations in OpenStreetMap
+ This Website is used to generate polygons for recursive relations in OpenStreetMap
 
 Using this tool, you can get latest polygons from OSM, optionally simplified using PostGIS.
 
