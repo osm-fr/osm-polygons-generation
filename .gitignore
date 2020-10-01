@@ -1,6 +1,6 @@
 *.py[co]
 
-# Packages
+# Packages And Features
 *.egg
 *.egg-info
 dist
