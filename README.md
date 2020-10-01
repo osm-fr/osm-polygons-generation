@@ -1,4 +1,4 @@
-osm-polygons-generation
+Awesome polygons generation- type
 =======================
 
 Website to generate polygons for recursive relations in OpenStreetMap
