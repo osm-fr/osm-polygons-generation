@@ -188,7 +188,7 @@ if len(results) == 0 or refresh or not found_param_0:
     sys.stdout.flush()
     PgCursor.execute("DROP TABLE IF EXISTS tmp_way_poly_%d" % rel_id)
     PgCursor.execute("CREATE TABLE tmp_way_poly_%d (id integer, linestring geometry);" % rel_id)
-    cmd = ("../tools/OsmBin.py", "--read", "/data/work/osmbin/data/", "relation_geom", "%d" % rel_id)
+    cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation_geom", "%d" % rel_id)
     run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     PgCursor.copy_from(run.stdout, "tmp_way_poly_%d" % rel_id)
     sql_create = "select create_polygon2(%s);"
@@ -210,7 +210,7 @@ if len(results) == 0 or refresh or not found_param_0:
     results = PgCursor.fetchall()
 
     import ast
-    cmd = ("../tools/OsmBin.py", "--read", "/data/work/osmbin/data/", "relation", "%d" % rel_id)
+    cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
     run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     j = ast.literal_eval(run.stdout.read())
     PgCursor.execute("DELETE FROM relations WHERE id = %s", (rel_id, ))
