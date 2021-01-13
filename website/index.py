@@ -139,8 +139,6 @@ def parse_pg_notices(notices):
   s = s.replace("\n", "<br>\n")
   return s
 
-utils.print_header("Polygon creation for id %d" % rel_id)
-
 if y > 0 and z > 0:
     sys.stdout.flush()
     params = "%f-%f-%f" % (x, y, z)
@@ -165,8 +163,11 @@ if y > 0 and z > 0:
         PgCursor.execute(sql_gen2, (rel_id, params,
                                     x, y, z, rel_id ))
     except psycopg2.InternalError:
+        show(u"Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
         show(u"Error while generating polygon.")
         show(u"Message from postgresql server:<br>")
+        show(u"%s" % PgConn.notices)
         show(u"%s" % parse_pg_notices(PgConn.notices))
         sys.exit(0)
 
@@ -195,6 +196,8 @@ if len(results) == 0 or refresh or not found_param_0:
     try:
         PgCursor.execute(sql_create, (rel_id, ))
     except psycopg2.InternalError:
+        show(u"Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
         show(u"Error while generating polygon.")
         show(u"You could check the geometry through an analyser:<br>")
         show(u"<ul>")
@@ -213,9 +216,20 @@ if len(results) == 0 or refresh or not found_param_0:
     cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
     run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     j = ast.literal_eval(run.stdout.read())
+    if not j:
+        show(u"Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
+        show(u"Error while generating polygon.")
+        show(u"Is relation present in OSM?<br>")
+        show(u"<ul>")
+        show(u"<li><a href='http://www.openstreetmap.org/relation/%d'>OSM</a>." % rel_id)
+        show(u"</ul>")
+        sys.exit(-1)
+
     PgCursor.execute("DELETE FROM relations WHERE id = %s", (rel_id, ))
     PgCursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, j["tag"]))
 
+utils.print_header("Polygon creation for id %d" % rel_id)
 show(u"<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
 
 show(u"<table class='sortable'>\n")
