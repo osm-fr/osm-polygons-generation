@@ -3,7 +3,6 @@
 
 import os, atexit
 import re
-import Cookie
 from xml.sax import make_parser, handler
 
 ################################################################################
@@ -20,11 +19,11 @@ def get_dbconn():
     psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
     psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
     conn = psycopg2.extras.DictConnection(db_string)
-    psycopg2.extras.register_hstore(conn, unicode=True)
+    psycopg2.extras.register_hstore(conn)
     return conn
 
 def show(s):
-    print s.encode("utf8")
+    print(s)
 
 def multiple_replace(dict, text):
 
@@ -39,13 +38,13 @@ def multiple_replace(dict, text):
 
 
 def print_template(filename, rules = None):
-    page = open(os.path.join(root_folder, "templates", filename)).read().decode("utf8")
+    page = open(os.path.join(root_folder, "templates", filename)).read()
     if rules:
         r = {}
-        for (k, v) in rules.iteritems():
+        for (k, v) in rules.items():
             r["#%s#" % k] = v
         page = multiple_replace(r, page)
-    print page.encode("utf8")
+    print(page)
 
 def print_header(title = ""):
     rules = { "title" : title }

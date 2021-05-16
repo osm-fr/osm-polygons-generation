@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 import sys, os, cgi, re
@@ -37,9 +37,6 @@ PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
 utils.print_header("Importer of .poly files")
-
-#show(u"Content-Type: text/plain; charset=utf-8")
-#print
 
 char_set = string.ascii_lowercase + string.digits
 name += "_" + (''.join(random.sample(char_set*6,6)))

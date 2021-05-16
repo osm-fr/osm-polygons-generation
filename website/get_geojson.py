@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 import sys, os, cgi
@@ -16,7 +16,7 @@ PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
 show(u"Content-Type: text/plain; charset=utf-8")
-print
+show(u"")
 
 sql = """select ST_AsGeoJSON(ST_Collect(geom))
          from polygons where id IN %s AND params = %s"""
@@ -25,4 +25,4 @@ PgCursor.execute(sql, (tuple(rel_id), params))
 results = PgCursor.fetchall()
 
 for res in results:
-    print res[0]
+    show(res[0])

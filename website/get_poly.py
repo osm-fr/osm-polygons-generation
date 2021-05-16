@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 import sys, os, cgi, re
@@ -37,7 +37,7 @@ elif name != "" and rel_id == -1:
 else:
   show(u"Status: 500")
   show(u"Content-Type: text/plain; charset=utf-8")
-  print
+  show(u"")
   show(u"Error: id or name should be given")
   sys.exit(0)
 
@@ -47,13 +47,13 @@ results = PgCursor.fetchall()
 if not results:
   show(u"Status: 500")
   show(u"Content-Type: text/plain; charset=utf-8")
-  print
+  show(u"")
   show(u"Error when getting polygon from database")
   sys.exit(0)
 
 else:
   show(u"Content-Type: text/plain; charset=utf-8")
-  print
+  show(u"")
 
 wkt = results[0][0]
 

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 import sys, os, cgi, subprocess, psycopg2, re
@@ -124,7 +124,7 @@ def parse_pg_notices(notices):
   re_lat_lon = re.compile("(.*point) ([-0-9.]*)f ([-0-9.]*)f - ways: (.*)$")
   s = u""
   for n in notices:
-    line = n.decode("utf8")
+    line = n
     m = re_lat_lon.match(line)
     if m:
       lon = float(m.group(2))
@@ -217,7 +217,7 @@ if len(results) == 0 or refresh or not found_param_0:
     import ast
     cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
     run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    j = ast.literal_eval(run.stdout.read())
+    j = ast.literal_eval(run.stdout.read().decode("utf-8"))
     if not j:
         show(u"Status: 500 Internal Server Error")
         utils.print_header("Polygon creation for id %d" % rel_id)

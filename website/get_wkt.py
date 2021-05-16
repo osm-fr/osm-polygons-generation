@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 import sys, os, cgi
@@ -24,12 +24,12 @@ results = PgCursor.fetchall()
 if len(results) == 0:
   show(u"Status: 500")
   show(u"Content-Type: text/plain; charset=utf-8")
-  print
+  show(u"")
   show(u"Error: Polygons wasn't correctly generated")
   sys.exit(0)
 
 show(u"Content-Type: text/plain; charset=utf-8")
-print
+show(u"")
 
 for res in results:
     show(u"%s" % res[0])

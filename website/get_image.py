@@ -1,8 +1,9 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 import cgi
 import cgitb
+import io
 import math
 import os
 import shutil
@@ -121,17 +122,16 @@ pyplot.legend(loc='upper center', ncol=5, frameon=True,
               bbox_to_anchor=(0.5, 1), bbox_transform=pyplot.gcf().transFigure)
 fig.tight_layout()
 
-import cStringIO
-imgData = cStringIO.StringIO()
+imgData = io.BytesIO()
 pyplot.savefig(imgData, format='png')
 
 # rewind the data
 imgData.seek(0)
 
-print "Content-Type: image/png"
-print
-
-print imgData.read()
+print("Content-Type: image/png")
+print()
+sys.stdout.flush()
+sys.stdout.buffer.write(imgData.read())
 
 # Clean temporary directory
 shutil.rmtree(os.environ['MPLCONFIGDIR'])
