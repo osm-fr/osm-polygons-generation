@@ -153,7 +153,7 @@ if y > 0 and z > 0:
     WHERE id = %s AND params = '0')
   );"""
     if x > 0:
-      sql_gen2 = sql_gen2_1 + "ST_Union(ST_SimplifyPreserveTopology(geom, 0.00001), " + sql_gen2_2
+      sql_gen2 = sql_gen2_1 + "ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), " + sql_gen2_2
     elif x == 0:
       sql_gen2 = sql_gen2_1 + "(" + sql_gen2_2
     else:
