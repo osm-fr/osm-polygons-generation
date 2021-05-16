@@ -5,6 +5,7 @@ import cgi
 import cgitb
 import math
 import os
+import shutil
 import sys
 import tempfile
 
@@ -131,3 +132,6 @@ print "Content-Type: image/png"
 print
 
 print imgData.read()
+
+# Clean temporary directory
+shutil.rmtree(os.environ['MPLCONFIGDIR'])
