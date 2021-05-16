@@ -275,8 +275,6 @@ show(u"<li>X = 0 will give a polygon similar to the original geometry.")
 show(u"<li>X < 0 will give a polygon smaller than the original geometry, and guaranteed to be smaller.")
 show(u"</ul>")
 
-show(u"<p>ST_Simplify(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z))</p>")
-
 if geom_length >= 10:
     rec_x = 0.04
     rec_y = 0.01
@@ -300,6 +298,13 @@ show(u"<input type='text' name='z' id='z' value='%f'><br>" % rec_z)
 show(u"<input type='submit' name='generate'>")
 show(u"</form>")
 
+show(u"<hr>")
+show(u"SQL requests:")
+show(u"<ul>")
+show(u"<li>X > 0: <code>ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), ST_Buffer(ST_SimplifyPreserveTopology(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z)))</code>")
+show(u"<li>X = 0: <code>ST_Buffer(ST_SimplifyPreserveTopology(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z)))</code>")
+show(u"<li>X < 0: <code>ST_Intersection(geom, ST_Buffer(ST_SimplifyPreserveTopology(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z)))</code>")
+show(u"</ul>")
 
 ###########################################################################
 utils.print_tail()
