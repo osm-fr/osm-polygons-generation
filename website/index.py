@@ -57,13 +57,13 @@ if rel_id == -1:
 
     show(u"<p>Here are the latest generated polygons with this application.</p>")
 
-    show(u"<table class='sortable'>\n")
-    show(u"  <tr>\n")
-    show(u"    <th>%s</th>\n" % ("id"))
-    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>\n" % ("timestamp"))
-    show(u"    <th>%s</th>\n" % ("name"))
-    show(u"    <th>%s</th>\n" % ("admin"))
-    show(u"  </tr>\n")
+    show(u"<table class='sortable'>")
+    show(u"  <tr>")
+    show(u"    <th>%s</th>" % ("id"))
+    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>" % ("timestamp"))
+    show(u"    <th>%s</th>" % ("name"))
+    show(u"    <th>%s</th>" % ("admin"))
+    show(u"  </tr>")
 
     sql_list = """select polygons.id, timestamp, relations.tags
          from polygons
@@ -76,30 +76,30 @@ if rel_id == -1:
     results = PgCursor.fetchall()
 
     for res in results:
-        show(u"  <tr>\n")
-        show(u"    <td><a href='?id=%d'>%d</a></td>\n" % (res["id"], res["id"]))
-        show(u"    <td>" + str(res["timestamp"]) + "</td>\n")
+        show(u"  <tr>")
+        show(u"    <td><a href='?id=%d'>%d</a></td>" % (res["id"], res["id"]))
+        show(u"    <td>" + str(res["timestamp"]) + "</td>")
         if res["tags"] is not None and "name" in res["tags"]:
-            show(u"    <td>" + res["tags"]["name"] + "</td>\n")
+            show(u"    <td>" + res["tags"]["name"] + "</td>")
         else:
-            show(u"    <td></td>\n")
+            show(u"    <td></td>")
         if res["tags"] is not None and "admin_level" in res["tags"]:
-            show(u"    <td>" + res["tags"]["admin_level"] + "</td>\n")
+            show(u"    <td>" + res["tags"]["admin_level"] + "</td>")
         else:
-            show(u"    <td></td>\n")
-        show(u"  </tr>\n")
+            show(u"    <td></td>")
+        show(u"  </tr>")
 
-    show(u"</table>\n")
+    show(u"</table>")
 
     show(u"<h1>%s</h1>" % ("List of recently uploaded polygons"))
 
     show(u"<p>Here are the latest uploaded polygons with this application.</p>")
 
-    show(u"<table class='sortable'>\n")
-    show(u"  <tr>\n")
-    show(u"    <th>%s</th>\n" % ("name"))
-    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>\n" % ("timestamp"))
-    show(u"  </tr>\n")
+    show(u"<table class='sortable'>")
+    show(u"  <tr>")
+    show(u"    <th>%s</th>" % ("name"))
+    show(u"    <th class='sorttable_sorted_reverse'>%s<span id='sorttable_sortrevind'>&nbsp;▴</span></th>" % ("timestamp"))
+    show(u"  </tr>")
 
     sql_list = """select name, timestamp
          from polygons_user
@@ -110,12 +110,12 @@ if rel_id == -1:
     results = PgCursor.fetchall()
 
     for res in results:
-        show(u"  <tr>\n")
-        show(u"    <td><a href='show_polygon.py?name=%s'>%s</a></td>\n" % (res["name"], res["name"]))
-        show(u"    <td>" + str(res["timestamp"]) + "</td>\n")
-        show(u"  </tr>\n")
+        show(u"  <tr>")
+        show(u"    <td><a href='show_polygon.py?name=%s'>%s</a></td>" % (res["name"], res["name"]))
+        show(u"    <td>" + str(res["timestamp"]) + "</td>")
+        show(u"  </tr>")
 
-    show(u"</table>\n")
+    show(u"</table>")
 
 
     sys.exit(0)
@@ -234,33 +234,33 @@ if len(results) == 0 or refresh or not found_param_0:
 utils.print_header("Polygon creation for id %d" % rel_id)
 show(u"<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
 
-show(u"<table class='sortable'>\n")
-show(u"  <tr>\n")
-show(u"    <th class='sorttable_sorted'>%s<span id='sorttable_sortfwdind'>&nbsp;▾</span></th>\n" % ("params"))
-show(u"    <th>%s</th>\n" % ("timestamp"))
-show(u"    <th>%s</th>\n" % ("NPoints"))
-show(u"    <th>%s</th>\n" % ("Length"))
-show(u"    <th>%s</th>\n" % ("WKT"))
-show(u"    <th>%s</th>\n" % ("GeoJSON"))
-show(u"    <th>%s</th>\n" % ("poly"))
-show(u"    <th>%s</th>\n" % ("Image"))
-show(u"  </tr>\n")
+show(u"<table class='sortable'>")
+show(u"  <tr>")
+show(u"    <th class='sorttable_sorted'>%s<span id='sorttable_sortfwdind'>&nbsp;▾</span></th>" % ("params"))
+show(u"    <th>%s</th>" % ("timestamp"))
+show(u"    <th>%s</th>" % ("NPoints"))
+show(u"    <th>%s</th>" % ("Length"))
+show(u"    <th>%s</th>" % ("WKT"))
+show(u"    <th>%s</th>" % ("GeoJSON"))
+show(u"    <th>%s</th>" % ("poly"))
+show(u"    <th>%s</th>" % ("Image"))
+show(u"  </tr>")
 
 for res in results:
     if res["params"] == "0":
         geom_length = res["length"]
-    show(u"  <tr>\n")
-    show(u"    <td>" + str(res["params"]) + "</td>\n")
-    show(u"    <td>" + str(res["timestamp"]) + "</td>\n")
-    show(u"    <td>" + str(res["npoints"]) + "</td>\n")
-    show(u"    <td>" + str(res["length"]) + "</td>\n")
-    show(u"    <td><a href='get_wkt.py?id=%d&amp;params=%s'>WKT</a></td>\n" % (rel_id, str(res["params"])))
-    show(u"    <td><a href='get_geojson.py?id=%d&amp;params=%s'>GeoJSON</a></td>\n" % (rel_id, str(res["params"])))
-    show(u"    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>\n" % (rel_id, str(res["params"])))
-    show(u"    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>\n" % (rel_id, str(res["params"])))
-    show(u"  </tr>\n")
+    show(u"  <tr>")
+    show(u"    <td>" + str(res["params"]) + "</td>")
+    show(u"    <td>" + str(res["timestamp"]) + "</td>")
+    show(u"    <td>" + str(res["npoints"]) + "</td>")
+    show(u"    <td>" + str(res["length"]) + "</td>")
+    show(u"    <td><a href='get_wkt.py?id=%d&amp;params=%s'>WKT</a></td>" % (rel_id, str(res["params"])))
+    show(u"    <td><a href='get_geojson.py?id=%d&amp;params=%s'>GeoJSON</a></td>" % (rel_id, str(res["params"])))
+    show(u"    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>" % (rel_id, str(res["params"])))
+    show(u"    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>" % (rel_id, str(res["params"])))
+    show(u"  </tr>")
 
-show(u"</table>\n")
+show(u"</table>")
 
 show(u"<br>\n")
 show(u"<form method='POST' action=''>")
