@@ -7,7 +7,7 @@ sys.path.append(root)
 from tools import utils
 
 form      = cgi.FieldStorage()
-rel_id    = int(form.getvalue("id", -1))
+rel_id    = [int(i) for i in form.getvalue("id", -1).split(",")]
 params    = str(form.getvalue("params", -1))
 
 show = utils.show
@@ -15,9 +15,9 @@ show = utils.show
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
-sql = """select ST_AsEWKT(geom)
-         from polygons where id = %s AND params = %s"""
-PgCursor.execute(sql, (rel_id, params))
+sql = """select ST_AsEWKT(ST_Union(geom))
+         from polygons where id IN %s AND params = %s"""
+PgCursor.execute(sql, (tuple(rel_id), params))
 
 results = PgCursor.fetchall()
 
