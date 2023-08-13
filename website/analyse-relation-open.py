@@ -55,8 +55,8 @@ def get_ways(relid):
 def ways_bounds(ways):
     nodes = []
     for w in ways:
-        nodes.append(w[u"nd"][0])
-        nodes.append(w[u"nd"][-1])
+        nodes.append(w["nd"][0])
+        nodes.append(w["nd"][-1])
     err = []
     for n in set(nodes):
         if (nodes.count(n) % 2) == 1:
@@ -72,14 +72,14 @@ if __name__=="__main__":
 
     if rel_id == -1:
         utils.print_header("Open relation analyser")
-        show(u"<h1>%s</h1>" % ("Open relation analyser"))
-        show(u"<p>This will analyse a relation, and show the location of nodes where an odd number of ways are connected. These nodes are locations where relation might be broken</p>")
-        show(u"<form method='GET' action=''>")
-        show(u"<label for='id'>%s</label>" % "Id of relation")
-        show(u"<input type='text' name='id' id='id'>")
-        show(u"<input type='submit'>")
-        show(u"</form>")
-        show(u"<br>\n")
+        show("<h1>%s</h1>" % ("Open relation analyser"))
+        show("<p>This will analyse a relation, and show the location of nodes where an odd number of ways are connected. These nodes are locations where relation might be broken</p>")
+        show("<form method='GET' action=''>")
+        show("<label for='id'>%s</label>" % "Id of relation")
+        show("<input type='text' name='id' id='id'>")
+        show("<input type='submit'>")
+        show("</form>")
+        show("<br>\n")
         utils.print_tail()
         sys.exit(0)
 
@@ -92,29 +92,29 @@ if __name__=="__main__":
     for nid, cpt in ways_bounds(wys):
         dta = bin.NodeGet(nid)
         if not error_found:
-            show(u"<p>Here are the location of nodes where an odd number of ways are connected. These nodes are locations where relation might be broken</p>")
-            show(u"<table class='sortable'>")
-            show(u"  <tr>")
-            show(u"    <th>%s</th>" % ("node id"))
-            show(u"    <th>%s</th>" % ("count"))
-            show(u"    <th>%s</th>" % ("lat"))
-            show(u"    <th>%s</th>" % ("lon"))
-            show(u"  </tr>")
+            show("<p>Here are the location of nodes where an odd number of ways are connected. These nodes are locations where relation might be broken</p>")
+            show("<table class='sortable'>")
+            show("  <tr>")
+            show("    <th>%s</th>" % ("node id"))
+            show("    <th>%s</th>" % ("count"))
+            show("    <th>%s</th>" % ("lat"))
+            show("    <th>%s</th>" % ("lon"))
+            show("  </tr>")
         error_found = 1
         if dta:
-            show(u"  <tr>")
-            show(u"    <td><a href='http://www.openstreetmap.org/api/0.6/node/%s'>%s</a></td>" % (nid, nid))
-            show(u"    <td>%s</td>" % cpt)
-            show(u"    <td>%s</td>" % dta["lat"])
-            show(u"    <td>%s</td>" % dta["lon"])
-            show(u"  </tr>")
+            show("  <tr>")
+            show("    <td><a href='http://www.openstreetmap.org/api/0.6/node/%s'>%s</a></td>" % (nid, nid))
+            show("    <td>%s</td>" % cpt)
+            show("    <td>%s</td>" % dta["lat"])
+            show("    <td>%s</td>" % dta["lon"])
+            show("  </tr>")
 
         else:
             show(dta)
 
     if error_found:
-        show(u"</table>")
+        show("</table>")
     else:
-        show(u"<p>No problem found. All nodes are connected to an even number of ways.</p>")
+        show("<p>No problem found. All nodes are connected to an even number of ways.</p>")
 
     utils.print_tail()

@@ -22,14 +22,14 @@ PgCursor.execute(sql, (tuple(rel_id), params))
 results = PgCursor.fetchall()
 
 if len(results) == 0:
-  show(u"Status: 500")
-  show(u"Content-Type: text/plain; charset=utf-8")
-  show(u"")
-  show(u"Error: Polygons wasn't correctly generated")
+  show("Status: 500")
+  show("Content-Type: text/plain; charset=utf-8")
+  show("")
+  show("Error: Polygons wasn't correctly generated")
   sys.exit(0)
 
-show(u"Content-Type: text/plain; charset=utf-8")
-show(u"")
+show("Content-Type: text/plain; charset=utf-8")
+show("")
 
 for res in results:
-    show(u"%s" % res[0])
+    show("%s" % res[0])
