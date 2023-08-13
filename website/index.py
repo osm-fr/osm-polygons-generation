@@ -3,6 +3,7 @@
 
 import sys, cgi, subprocess, psycopg2, re
 import cgitb
+import ast
 root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)
 from tools import utils
@@ -214,7 +215,6 @@ if len(results) == 0 or refresh or not found_param_0:
 
     results = PgCursor.fetchall()
 
-    import ast
     cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
     run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     j = ast.literal_eval(run.stdout.read().decode("utf-8"))

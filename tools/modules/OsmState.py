@@ -20,6 +20,7 @@
 ###########################################################################
 
 import dateutil.parser
+import unittest
 
 ###########################################################################
 
@@ -49,7 +50,6 @@ class OsmState:
     return self._timestamp
 
 ###########################################################################
-import unittest
 
 class Test(unittest.TestCase):
   def test_state(self):

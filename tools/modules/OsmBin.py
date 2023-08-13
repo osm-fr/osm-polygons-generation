@@ -51,6 +51,7 @@ from modules.lockfile import lockfile
 from . import OsmReader
 import sys
 import os
+import unittest
 
 
 class MissingDataError(Exception):
@@ -440,7 +441,6 @@ class OsmBin:
         i.CopyTo(self)
 
 ###########################################################################
-import unittest
 
 class MockCountObjects:
     def __init__(self):

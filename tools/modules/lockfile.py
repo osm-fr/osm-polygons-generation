@@ -21,6 +21,7 @@
 
 import os
 import fcntl
+import unittest
 
 
 def get_pstree(pid=os.getpid()):
@@ -69,7 +70,6 @@ class lockfile:
 
 
 ###########################################################################
-import unittest
 
 class Test(unittest.TestCase):
     dir_tmp_tests = "tmp/tests"
