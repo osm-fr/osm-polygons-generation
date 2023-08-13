@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import sys, cgi
+import cgitb
 import random
 import string
 root = "/data/project/polygons/polygons-generation"
@@ -27,7 +28,6 @@ if "name" not in form and "poly" not in form:
     utils.print_tail()
     sys.exit(0)
 
-import cgitb
 cgitb.enable()
 
 name = str(form.getvalue("name", -1))
