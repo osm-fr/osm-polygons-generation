@@ -1,0 +1,9 @@
+GDAL>=3.7.0
+gdal>=3.7.1.1
+matplotlib>=3.7.2
+numpy>=1.25.1
+ogr>=0.45.0
+osr>=0.0.1
+psycopg2-binary>=2.9.6
+python_dateutil>=2.8.2
+Shapely>=2.0.1
