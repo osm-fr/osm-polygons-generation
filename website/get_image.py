@@ -42,12 +42,12 @@ def draw_polygon(rel_id, params, name, color, zorder=0, label=""):
                                        (SELECT geom from polygons_user
                                         WHERE name = %s)))"""
     sql_p = (tuple(rel_id), params, name)
-  
+
   elif name == "" and rel_id != [-1]:
     sql = """select ST_AsText(ST_Union(geom))
              from polygons where id IN %s AND params = %s"""
     sql_p = (tuple(rel_id), params)
-  
+
   elif name != "" and rel_id == [-1]:
     sql = """select ST_AsText(geom)
              from polygons_user where name = %s"""

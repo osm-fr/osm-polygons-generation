@@ -39,12 +39,12 @@ if rel_id != -1:
                   FROM polygons WHERE id = %s
                   ORDER BY params"""
     PgCursor.execute(sql_list, (rel_id, ))
-    
+
     osm_results = PgCursor.fetchall()
-    
+
     if osm_results:
         show(u"<h2>%s</h2>" % ("List of available polygons for id = %d" % rel_id))
-        
+
         show(u"<table class='sortable'>\n")
         show(u"  <tr>\n")
         show(u"    <th class='sorttable_sorted'>%s<span id='sorttable_sortfwdind'>&nbsp;▾</span></th>\n" % ("params"))
@@ -56,7 +56,7 @@ if rel_id != -1:
         show(u"    <th>%s</th>\n" % ("poly"))
         show(u"    <th>%s</th>\n" % ("Image"))
         show(u"  </tr>\n")
-        
+
         for res in osm_results:
             show(u"  <tr>\n")
             show(u"    <td>" + str(res["params"]) + "</td>\n")
@@ -68,7 +68,7 @@ if rel_id != -1:
             show(u"    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>\n" % (rel_id, str(res["params"])))
             show(u"    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>\n" % (rel_id, str(res["params"])))
             show(u"  </tr>\n")
-        
+
         show(u"</table>\n")
 
 if name != "":
@@ -78,12 +78,12 @@ if name != "":
                   FROM polygons_user WHERE name LIKE %s
                   ORDER BY name"""
     PgCursor.execute(sql_list, (name, ))
-    
+
     user_results = PgCursor.fetchall()
-    
+
     if user_results:
         show(u"<h2>%s</h2>" % ("List of available user polygons for name = %s" % name))
-        
+
         show(u"<table class='sortable'>\n")
         show(u"  <tr>\n")
         show(u"    <th>%s</th>\n" % ("name"))
@@ -95,7 +95,7 @@ if name != "":
         show(u"    <th>%s</th>\n" % ("poly"))
         show(u"    <th>%s</th>\n" % ("Image"))
         show(u"  </tr>\n")
-        
+
         for res in user_results:
             n = str(res["name"])
             show(u"  <tr>\n")
@@ -108,7 +108,7 @@ if name != "":
             show(u"    <td><a href='get_poly.py?name=%s'>poly</a></td>\n" % (n))
             show(u"    <td><a href='get_image.py?name=%s'>image</a></td>\n" % (n))
             show(u"  </tr>\n")
-        
+
         show(u"</table>\n")
 
 

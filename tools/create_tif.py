@@ -8,7 +8,7 @@ except:
     import gdal
     import osr
     import ogr
-    
+
 import math
 import sys
 
@@ -20,7 +20,7 @@ tiff_width = 2000
 tiff_height = 2000
 # Alternative B: Set pixel resolution
 x_res = 0.5
-y_res = 0.75 
+y_res = 0.75
 
 # add some pixel margin
 margin = 50
