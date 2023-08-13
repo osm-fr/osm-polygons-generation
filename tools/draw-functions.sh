@@ -30,7 +30,7 @@ WHERE ST_IsValid(linestring) AND ST_NPoints(linestring) > 1 AND $2"
   echo "$sql"
 
   pgsql2shp -f "$1" "$DATABASE" "$sql"
-}  
+}
 
 function get_polygon_shp {
   # $1 is the target file
@@ -42,7 +42,7 @@ WHERE $2 AND
       ST_IsClosed(linestring) AND
       ST_NumPoints(linestring) >= 4
 "
-}  
+}
 
 function draw_shp {
   # $1 is the target .tif file

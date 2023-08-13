@@ -211,7 +211,7 @@ if len(results) == 0 or refresh or not found_param_0:
         sys.exit(0)
 
     PgCursor.execute(sql_list, (rel_id, ))
-        
+
     results = PgCursor.fetchall()
 
     import ast

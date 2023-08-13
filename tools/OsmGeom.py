@@ -30,23 +30,23 @@ def read_polygon_wkt(f):
         line = f.readline()
         if not(line):
             break;
-            
+
         line = line.strip()
         if line == "END":
             break
-        
+
         if not(line):
             continue
-        
+
         ords = line.split()
         coords.append("%f %f" % (float(ords[0]), float(ords[1])))
-    
+
     if len(coords) < 3:
         return None
 
     polygon = "((" + ", ".join(coords) + "))"
-    
-    return polygon    
+
+    return polygon
 
 # Read a multipolygon from the file
 # First line: name (discarded)
@@ -61,11 +61,11 @@ def read_multipolygon_wkt(f):
         dummy = f.readline()
         if not(dummy):
             break
-        
+
         polygon = read_polygon_wkt(f)
         if polygon != None:
             polygons.append(polygon)
 
     wkt = "MULTIPOLYGON (" + ",".join(polygons) + ")"
-    
-    return wkt        
+
+    return wkt
