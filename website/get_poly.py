@@ -62,9 +62,9 @@ wkt = results[0][0]
 
 def write_polygon(f, wkt, p):
 
-        match = re.search("^\(\((?P<pdata>.*)\)\)$", wkt)
+        match = re.search(r"^\(\((?P<pdata>.*)\)\)$", wkt)
         pdata = match.group("pdata")
-        rings = re.split("\),\(", pdata)
+        rings = re.split(r"\),\(", pdata)
 
         first_ring = True
         for ring in rings:
@@ -87,11 +87,11 @@ def write_polygon(f, wkt, p):
 
 def write_multipolygon(f, wkt):
 
-        match = re.search("^MULTIPOLYGON\((?P<mpdata>.*)\)$", wkt)
+        match = re.search(r"^MULTIPOLYGON\((?P<mpdata>.*)\)$", wkt)
 
         if match:
                 mpdata = match.group("mpdata")
-                polygons = re.split("(?<=\)\)),(?=\(\()", mpdata)
+                polygons = re.split(r"(?<=\)\)),(?=\(\()", mpdata)
 
                 p = 0
                 for polygon in polygons:
