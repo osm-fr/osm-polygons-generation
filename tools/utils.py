@@ -1,9 +1,8 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
 
-import os, atexit
+import os
 import re
-from xml.sax import make_parser, handler
 
 ################################################################################
 

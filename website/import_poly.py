@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import sys, os, cgi, re
+import sys, cgi
 import random
 import string
 root = "/data/project/polygons/polygons-generation"

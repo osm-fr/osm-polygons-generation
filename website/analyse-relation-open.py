@@ -20,7 +20,6 @@
 
 import cgi
 import cgitb
-import os
 import sys
 sys.path.append("/data/project/osmbin/osm/osc_modif/")
 from modules import OsmBin
