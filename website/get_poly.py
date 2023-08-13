@@ -35,25 +35,25 @@ elif name != "" and rel_id == [-1]:
   sql_p = (name, )
 
 else:
-  show(u"Status: 500")
-  show(u"Content-Type: text/plain; charset=utf-8")
-  show(u"")
-  show(u"Error: id or name should be given")
+  show("Status: 500")
+  show("Content-Type: text/plain; charset=utf-8")
+  show("")
+  show("Error: id or name should be given")
   sys.exit(0)
 
 PgCursor.execute(sql, sql_p)
 
 results = PgCursor.fetchall()
 if not results:
-  show(u"Status: 500")
-  show(u"Content-Type: text/plain; charset=utf-8")
-  show(u"")
-  show(u"Error when getting polygon from database")
+  show("Status: 500")
+  show("Content-Type: text/plain; charset=utf-8")
+  show("")
+  show("Error when getting polygon from database")
   sys.exit(0)
 
 else:
-  show(u"Content-Type: text/plain; charset=utf-8")
-  show(u"")
+  show("Content-Type: text/plain; charset=utf-8")
+  show("")
 
 wkt = results[0][0]
 
@@ -103,6 +103,6 @@ def write_multipolygon(f, wkt):
 
 
 
-show(u"polygon")
+show("polygon")
 write_multipolygon(sys.stdout, wkt)
-show(u"END")
+show("END")

@@ -15,8 +15,8 @@ show = utils.show
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
-show(u"Content-Type: text/plain; charset=utf-8")
-show(u"")
+show("Content-Type: text/plain; charset=utf-8")
+show("")
 
 sql = """select ST_AsGeoJSON(ST_Collect(geom))
          from polygons where id IN %s AND params = %s"""
