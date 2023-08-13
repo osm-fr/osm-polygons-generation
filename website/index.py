@@ -12,7 +12,7 @@ rel_id    = int(form.getvalue("id", -1))
 x         = float(form.getvalue("x", -1))
 y         = float(form.getvalue("y", -1))
 z         = float(form.getvalue("z", -1))
-refresh   = form.getvalue("refresh") != None
+refresh   = form.getvalue("refresh") is not None
 
 show = utils.show
 cgitb.enable()
@@ -161,7 +161,7 @@ if y > 0 and z > 0:
     PgCursor.execute(sql_gen1, (rel_id, params))
     try:
         PgCursor.execute(sql_gen2, (rel_id, params,
-                                    x, y, z, rel_id ))
+                                    x, y, z, rel_id))
     except psycopg2.InternalError:
         show("Status: 500 Internal Server Error")
         utils.print_header("Polygon creation for id %d" % rel_id)

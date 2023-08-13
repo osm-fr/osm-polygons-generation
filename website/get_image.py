@@ -83,7 +83,7 @@ elif rel_id == [-1]:
 elif params != "0":
   label = "simplified geometry"
 else:
-  label="base geometry"
+  label = "base geometry"
 
 (minx, miny, maxx, maxy) = draw_polygon(rel_id, params, name, "blue", zorder=10, label=label)
 

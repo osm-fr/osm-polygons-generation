@@ -65,7 +65,7 @@ def ways_bounds(ways):
 
 ###########################################################################
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     form = cgi.FieldStorage()
     rel_id = int(form.getvalue("id", -1))

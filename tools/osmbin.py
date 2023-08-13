@@ -4,7 +4,7 @@
 import sys
 from modules.OsmBin import OsmBin
 
-if __name__=="__main__":
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='Handle osmbin database.')
@@ -53,4 +53,3 @@ if __name__=="__main__":
                 print("%d	%s" % (way_id, s))
         else:
             raise ValueError("--read option %s not recognized" % args.read[0])
-

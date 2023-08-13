@@ -25,11 +25,10 @@
 def read_polygon_wkt(f):
 
     coords = []
-    first_coord = True
     while True:
         line = f.readline()
         if not(line):
-            break;
+            break
 
         line = line.strip()
         if line == "END":
@@ -63,7 +62,7 @@ def read_multipolygon_wkt(f):
             break
 
         polygon = read_polygon_wkt(f)
-        if polygon != None:
+        if polygon is not None:
             polygons.append(polygon)
 
     wkt = "MULTIPOLYGON (" + ",".join(polygons) + ")"
