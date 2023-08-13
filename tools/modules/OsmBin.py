@@ -47,11 +47,13 @@
 # print bin.RelationGet(12)
 # print bin.RelationFullRecur(12)
 
-from modules.lockfile import lockfile
-from . import OsmReader
-import sys
 import os
+import sys
 import unittest
+
+from modules.lockfile import lockfile
+
+from . import OsmReader
 
 
 class MissingDataError(Exception):

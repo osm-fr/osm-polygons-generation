@@ -20,9 +20,10 @@
 ###########################################################################
 
 import sys
-from .OsmState import OsmState
 from abc import abstractmethod
 from typing import Optional
+
+from .OsmState import OsmState
 
 
 class OsmReader:
