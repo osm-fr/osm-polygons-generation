@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import sys, os, cgi, subprocess, psycopg2, re
+import sys, cgi
 import cgitb
 root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)

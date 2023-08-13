@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import sys
 from modules.OsmBin import OsmBin
 
 if __name__=="__main__":
