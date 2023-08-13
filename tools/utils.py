@@ -46,9 +46,8 @@ def print_template(filename, rules = None):
     print(page)
 
 def print_header(title = ""):
-    rules = { "title" : title }
+    rules = {"title": title}
     print_template("head.tpl", rules)
 
 def print_tail():
     print_template("tail.tpl")
-
