@@ -1,14 +1,15 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import sys, cgi
+import cgi
 import cgitb
 import random
 import string
+import sys
+
 root = "/data/project/polygons/polygons-generation"
 sys.path.append(root)
-from tools import utils
-from tools import OsmGeom
+from tools import OsmGeom, utils
 
 show = utils.show
 
