@@ -17,7 +17,7 @@ show = utils.show
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
-show("Content-Type: text/plain; charset=utf-8")
+show("Content-Type: application/geo+json; charset=utf-8")
 show("")
 
 sql = """select ST_AsGeoJSON(ST_Collect(geom))
