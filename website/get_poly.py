@@ -11,7 +11,7 @@ from tools import utils
 
 form      = cgi.FieldStorage()
 rel_id    = [int(i) for i in form.getvalue("id", "-1").split(",")]
-params    = str(form.getvalue("params", -1))
+params    = str(form.getvalue("params", 0))
 name      = str(form.getvalue("name", ""))
 
 show = utils.show
