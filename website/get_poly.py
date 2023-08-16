@@ -79,7 +79,7 @@ def write_polygon(f, wkt, p):
 
                 for coord in coords:
                         ords = coord.split()
-                        f.write("\t%s\t%s\n" % (ords[0], ords[1]))
+                        f.write("  %-11s  %s\n" % (ords[0], ords[1]))
 
                 f.write("END\n")
 
