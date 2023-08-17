@@ -69,7 +69,7 @@ class InvalidSimplifiedGeometry(Exception):
     def __init__(self, pg_msg):
         self.pg_msg = pg_msg
 
-def check_polygon(pgcursor, rel_id, x=0, y=0, z=0):
+def check_polygon(pgcursor, rel_id, x=0, y=0, z=0, create=False):
     if (x, y, z) == (0, 0, 0):
         params = "0"
     else:
@@ -77,6 +77,14 @@ def check_polygon(pgcursor, rel_id, x=0, y=0, z=0):
     pgcursor.execute("SELECT id FROM polygons WHERE id = %s AND params = %s", (rel_id, params))
     if pgcursor.fetchone():
         return True
+
+    if create:
+        if (x, y, z) == (0, 0, 0):
+            create_polygon(pgcursor, rel_id)
+        else:
+            simplify_polygon(pgcursor, rel_id, x, y, z)
+        return True
+
     return False
 
 def create_polygon(pgcursor, rel_id):
