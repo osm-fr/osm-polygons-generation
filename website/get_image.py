@@ -11,7 +11,8 @@ import sys
 import tempfile
 
 cgitb.enable()
-root = "/data/project/polygons/polygons-generation"
+
+root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import utils
 

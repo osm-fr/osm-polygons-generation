@@ -3,11 +3,12 @@
 
 import cgi
 import cgitb
+import os
 import random
 import string
 import sys
 
-root = "/data/project/polygons/polygons-generation"
+root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import OsmGeom, utils
 

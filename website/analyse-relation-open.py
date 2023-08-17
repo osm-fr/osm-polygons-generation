@@ -20,12 +20,13 @@
 
 import cgi
 import cgitb
+import os
 import sys
 
 sys.path.append("/data/project/osmbin/osm/osc_modif/")
 from modules import OsmBin
 
-root = "/data/project/polygons/polygons-generation"
+root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import utils
 

@@ -2,10 +2,11 @@
 #-*- coding: utf-8 -*-
 
 import cgi
+import os
 import re
 import sys
 
-root = "/data/project/polygons/polygons-generation"
+root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import utils
 
