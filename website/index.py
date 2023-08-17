@@ -149,13 +149,39 @@ if y > 0 and z > 0:
     sys.stdout.flush()
     try:
         utils.simplify_polygon(PgCursor, rel_id, x, y, z)
-    except utils.InvalidGeometry as e:
+    except utils.InvalidSimplifiedGeometry as e:
         show("Status: 500 Internal Server Error")
         utils.print_header("Polygon creation for id %d" % rel_id)
         show("Error while generating polygon.")
         show("Message from postgresql server:<br>")
         show("%s" % parse_pg_notices(e.pg_msg))
         sys.exit(0)
+
+    except utils.InvalidGeometry as e:
+        show("Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
+        show("Error while generating polygon.")
+        show("You could check the geometry through an analyser:<br>")
+        show("<ul>")
+        show("<li><a href='analyse-relation-open.py?id=%d'>analyser using an internal database</a>." % rel_id)
+        show("<li><a href='http://ra.osmsurround.org/analyzeRelation?relationId=%d'>Relation analysis</a>." % rel_id)
+        show("<li><a href='http://ra.osmsurround.org/analyzeMap?relationId=%d'>Relation analysis with map</a>." % rel_id)
+#        show("<li><a href='http://analyser.openstreetmap.fr/cgi-bin/index.py?relation=%d'>analyser using OSM API (slower)</a>." % rel_id)
+        show("</ul>")
+        show("Message from postgresql server:<br>")
+        show("%s" % parse_pg_notices(e.pg_msg))
+        sys.exit(0)
+
+    except utils.NonExistingRelation as e:
+        show("Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
+        show("Error while generating polygon.")
+        show("Is relation present in OSM?<br>")
+        show("<ul>")
+        show("<li><a href='http://www.openstreetmap.org/relation/%d'>OSM</a>." % rel_id)
+        show("</ul>")
+        sys.exit(-1)
+
 
 sql_list = """select id, params, timestamp, ST_NPoints(geom) AS npoints,
               ST_MaxDistance(geom, geom) AS length

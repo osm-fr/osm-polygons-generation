@@ -65,6 +65,20 @@ class InvalidGeometry(Exception):
     def __init__(self, pg_msg):
         self.pg_msg = pg_msg
 
+class InvalidSimplifiedGeometry(Exception):
+    def __init__(self, pg_msg):
+        self.pg_msg = pg_msg
+
+def check_polygon(pgcursor, rel_id, x=0, y=0, z=0):
+    if (x, y, z) == (0, 0, 0):
+        params = "0"
+    else:
+        params = "%f-%f-%f" % (x, y, z)
+    pgcursor.execute("SELECT id FROM polygons WHERE id = %s AND params = %s", (rel_id, params))
+    if pgcursor.fetchone():
+        return True
+    return False
+
 def create_polygon(pgcursor, rel_id):
     pgcursor.execute("DROP TABLE IF EXISTS tmp_way_poly_%d" % rel_id)
     pgcursor.execute("CREATE TABLE tmp_way_poly_%d (id integer, linestring geometry);" % rel_id)
@@ -90,6 +104,9 @@ def create_polygon(pgcursor, rel_id):
     pgcursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, j["tag"]))
 
 def simplify_polygon(pgcursor, rel_id, x, y, z):
+    if not check_polygon(pgcursor, rel_id):
+        create_polygon(pgcursor, rel_id)
+
     params = "%f-%f-%f" % (x, y, z)
     sql_gen1 = "DELETE FROM polygons WHERE id = %s AND params = %s"
     sql_gen2_1 = """INSERT INTO polygons VALUES
@@ -112,4 +129,4 @@ def simplify_polygon(pgcursor, rel_id, x, y, z):
         pgcursor.execute(sql_gen2, (rel_id, params,
                                     x, y, z, rel_id))
     except psycopg2.InternalError:
-        raise InvalidGeometry(PgConn.notices)
+        raise InvalidSimplifiedGeometry(PgConn.notices)
