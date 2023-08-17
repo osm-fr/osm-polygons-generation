@@ -4,13 +4,14 @@
 import ast
 import cgi
 import cgitb
+import os
 import re
 import subprocess
 import sys
 
 import psycopg2
 
-root = "/data/project/polygons/polygons-generation"
+root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import utils
 
