@@ -13,13 +13,11 @@ form      = cgi.FieldStorage()
 rel_id    = [int(i) for i in form.getvalue("id", "-1").split(",")]
 params    = str(form.getvalue("params", 0))
 
-show = utils.show
-
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
-show("Content-Type: application/geo+json; charset=utf-8")
-show("")
+print("Content-Type: application/geo+json; charset=utf-8")
+print("")
 
 if params == "0":
     (x, y, z) = (0, 0, 0)
@@ -36,6 +34,6 @@ PgCursor.execute(sql, (tuple(rel_id), params))
 results = PgCursor.fetchall()
 
 for res in results:
-    show(res[0])
+    print(res[0])
 
 PgConn.commit()
