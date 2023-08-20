@@ -1,12 +1,10 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import ast
 import cgi
 import cgitb
 import os
 import re
-import subprocess
 import sys
 
 import psycopg2
@@ -149,35 +147,41 @@ def parse_pg_notices(notices):
 
 if y > 0 and z > 0:
     sys.stdout.flush()
-    params = "%f-%f-%f" % (x, y, z)
-    sql_gen1 = "DELETE FROM polygons WHERE id = %s AND params = %s"
-    sql_gen2_1 = """INSERT INTO polygons VALUES
-  (%s,
-   %s,
-   NOW(),
-   (SELECT """
-    sql_gen2_2 = """ST_Buffer(ST_SimplifyPreserveTopology(ST_Buffer(ST_SnapToGrid(st_buffer(geom, %s), %s), 0), %s), 0))
-    FROM polygons
-    WHERE id = %s AND params = '0')
-  );"""
-    if x > 0:
-      sql_gen2 = sql_gen2_1 + "ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), " + sql_gen2_2
-    elif x == 0:
-      sql_gen2 = sql_gen2_1 + "(" + sql_gen2_2
-    else:
-      sql_gen2 = sql_gen2_1 + "ST_Intersection(geom, " + sql_gen2_2
-    PgCursor.execute(sql_gen1, (rel_id, params))
     try:
-        PgCursor.execute(sql_gen2, (rel_id, params,
-                                    x, y, z, rel_id))
-    except psycopg2.InternalError:
+        utils.simplify_polygon(PgCursor, rel_id, x, y, z)
+    except utils.InvalidSimplifiedGeometry as e:
         show("Status: 500 Internal Server Error")
         utils.print_header("Polygon creation for id %d" % rel_id)
         show("Error while generating polygon.")
         show("Message from postgresql server:<br>")
-        show("%s" % PgConn.notices)
-        show("%s" % parse_pg_notices(PgConn.notices))
+        show("%s" % parse_pg_notices(e.pg_msg))
         sys.exit(0)
+
+    except utils.InvalidGeometry as e:
+        show("Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
+        show("Error while generating polygon.")
+        show("You could check the geometry through an analyser:<br>")
+        show("<ul>")
+        show("<li><a href='analyse-relation-open.py?id=%d'>analyser using an internal database</a>." % rel_id)
+        show("<li><a href='http://ra.osmsurround.org/analyzeRelation?relationId=%d'>Relation analysis</a>." % rel_id)
+        show("<li><a href='http://ra.osmsurround.org/analyzeMap?relationId=%d'>Relation analysis with map</a>." % rel_id)
+#        show("<li><a href='http://analyser.openstreetmap.fr/cgi-bin/index.py?relation=%d'>analyser using OSM API (slower)</a>." % rel_id)
+        show("</ul>")
+        show("Message from postgresql server:<br>")
+        show("%s" % parse_pg_notices(e.pg_msg))
+        sys.exit(0)
+
+    except utils.NonExistingRelation as e:
+        show("Status: 500 Internal Server Error")
+        utils.print_header("Polygon creation for id %d" % rel_id)
+        show("Error while generating polygon.")
+        show("Is relation present in OSM?<br>")
+        show("<ul>")
+        show("<li><a href='http://www.openstreetmap.org/relation/%d'>OSM</a>." % rel_id)
+        show("</ul>")
+        sys.exit(-1)
+
 
 sql_list = """select id, params, timestamp, ST_NPoints(geom) AS npoints,
               ST_MaxDistance(geom, geom) AS length
@@ -195,15 +199,9 @@ for res in results:
 
 if len(results) == 0 or refresh or not found_param_0:
     sys.stdout.flush()
-    PgCursor.execute("DROP TABLE IF EXISTS tmp_way_poly_%d" % rel_id)
-    PgCursor.execute("CREATE TABLE tmp_way_poly_%d (id integer, linestring geometry);" % rel_id)
-    cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation_geom", "%d" % rel_id)
-    run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    PgCursor.copy_from(run.stdout, "tmp_way_poly_%d" % rel_id)
-    sql_create = "select create_polygon2(%s);"
     try:
-        PgCursor.execute(sql_create, (rel_id, ))
-    except psycopg2.InternalError:
+        utils.create_polygon(PgCursor, rel_id)
+    except utils.InvalidGeometry as e:
         show("Status: 500 Internal Server Error")
         utils.print_header("Polygon creation for id %d" % rel_id)
         show("Error while generating polygon.")
@@ -215,17 +213,10 @@ if len(results) == 0 or refresh or not found_param_0:
 #        show("<li><a href='http://analyser.openstreetmap.fr/cgi-bin/index.py?relation=%d'>analyser using OSM API (slower)</a>." % rel_id)
         show("</ul>")
         show("Message from postgresql server:<br>")
-        show("%s" % parse_pg_notices(PgConn.notices))
+        show("%s" % parse_pg_notices(e.pg_msg))
         sys.exit(0)
 
-    PgCursor.execute(sql_list, (rel_id, ))
-
-    results = PgCursor.fetchall()
-
-    cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
-    run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    j = ast.literal_eval(run.stdout.read().decode("utf-8"))
-    if not j:
+    except utils.NonExistingRelation as e:
         show("Status: 500 Internal Server Error")
         utils.print_header("Polygon creation for id %d" % rel_id)
         show("Error while generating polygon.")
@@ -235,8 +226,8 @@ if len(results) == 0 or refresh or not found_param_0:
         show("</ul>")
         sys.exit(-1)
 
-    PgCursor.execute("DELETE FROM relations WHERE id = %s", (rel_id, ))
-    PgCursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, j["tag"]))
+    PgCursor.execute(sql_list, (rel_id, ))
+    results = PgCursor.fetchall()
 
 utils.print_header("Polygon creation for id %d" % rel_id)
 show("<h1>%s</h1>" % ("List of available polygons for id = %d" % rel_id))
