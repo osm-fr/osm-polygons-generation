@@ -9,6 +9,7 @@ import sys
 root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import utils
+from tools import OsmGeom
 
 form      = cgi.FieldStorage()
 rel_id    = [int(i) for i in form.getvalue("id", "-1").split(",")]
@@ -61,52 +62,6 @@ else:
 
 wkt = results[0][0]
 
-def write_polygon(f, wkt, p):
-
-        match = re.search(r"^\(\((?P<pdata>.*)\)\)$", wkt)
-        pdata = match.group("pdata")
-        rings = re.split(r"\),\(", pdata)
-
-        first_ring = True
-        for ring in rings:
-                coords = re.split(",", ring)
-
-                p = p + 1
-                if first_ring:
-                        f.write(str(p) + "\n")
-                        first_ring = False
-                else:
-                        f.write("!" + str(p) + "\n")
-
-                for coord in coords:
-                        ords = coord.split()
-                        f.write("  %-11s  %s\n" % (ords[0], ords[1]))
-
-                f.write("END\n")
-
-        return p
-
-def write_multipolygon(f, wkt):
-
-        match = re.search(r"^MULTIPOLYGON\((?P<mpdata>.*)\)$", wkt)
-
-        if match:
-                mpdata = match.group("mpdata")
-                polygons = re.split(r"(?<=\)\)),(?=\(\()", mpdata)
-
-                p = 0
-                for polygon in polygons:
-                        p = write_polygon(f, polygon, p)
-
-                return
-
-        match = re.search("^POLYGON(?P<pdata>.*)$", wkt)
-        if match:
-                pdata = match.group("pdata")
-                write_polygon(f, pdata, 0)
-
-
-
 show("polygon")
-write_multipolygon(sys.stdout, wkt)
+OsmGeom.write_multipolygon(sys.stdout, wkt)
 show("END")
