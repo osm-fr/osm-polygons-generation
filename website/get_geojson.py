@@ -9,6 +9,7 @@ import sys
 root = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(root)
 from tools import utils
+from tools import OsmGeom
 
 form = cgi.FieldStorage()
 
@@ -20,6 +21,9 @@ try:
     else:
         (x, y, z) = [float(i) for i in params.split("-")]
         params = "%f-%f-%f" % (x, y, z)
+    format = str(form.getvalue("format", "geojson"))
+    if format not in ("geojson", "wkt", "poly"):
+        raise NotImplementedError
 except:
     print("Status: 400 Bad Request")
     print("Content-Type: application/json; charset=utf-8")
@@ -42,7 +46,14 @@ for id in rel_id:
         print(json.dumps({"status": "ERROR", "message": "Polygon couldn't be generated"}))
         sys.exit(0)
 
-sql = """select ST_AsGeoJSON(ST_Union(geom))
+if format == "geojson":
+    sql_func = "ST_AsGeoJSON"
+elif format == "wkt":
+    sql_func = "ST_AsEWKT"
+elif format == "poly":
+    sql_func = "ST_AsText"
+
+sql = "select " + sql_func + """(ST_Union(geom))
          from polygons where id IN %s AND params = %s"""
 PgCursor.execute(sql, (tuple(rel_id), params))
 
@@ -54,10 +65,17 @@ if results == None:
     print("")
     print(json.dumps({"status": "ERROR", "message": "Polygon is empty"}))
 
-print("Content-Type: application/geo+json; charset=utf-8")
+if format == "geojson":
+    print("Content-Type: application/geo+json; charset=utf-8")
+else:
+    print("Content-Type: text/plain; charset=utf-8")
 print("")
 
-for res in results:
-    print(res[0])
+if format == "poly":
+    print("polygon")
+    OsmGeom.write_multipolygon(sys.stdout, results[0][0])
+else:
+    for res in results:
+        print(res[0])
 
 PgConn.commit()
