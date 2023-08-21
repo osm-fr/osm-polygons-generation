@@ -29,7 +29,7 @@ else:
 for id in rel_id:
     utils.check_polygon(PgCursor, id, x, y, z, create=True)
 
-sql = """select ST_AsGeoJSON(ST_Collect(geom))
+sql = """select ST_AsGeoJSON(ST_Union(geom))
          from polygons where id IN %s AND params = %s"""
 PgCursor.execute(sql, (tuple(rel_id), params))
 
