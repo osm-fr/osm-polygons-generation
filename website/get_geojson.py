@@ -11,6 +11,8 @@ sys.path.append(root)
 from tools import utils
 from tools import OsmGeom
 
+format = os.path.basename(__file__).removeprefix("get_").removesuffix(".py")
+
 form = cgi.FieldStorage()
 
 try:
@@ -22,7 +24,8 @@ try:
         (x, y, z) = [float(i) for i in params.split("-")]
         params = "%f-%f-%f" % (x, y, z)
     name = str(form.getvalue("name", ""))
-    format = str(form.getvalue("format", "geojson"))
+    if form.getvalue("format", None):
+        format = str(form.getvalue("format", "geojson"))
     if format not in ("geojson", "wkt", "poly"):
         raise NotImplementedError
 except:
