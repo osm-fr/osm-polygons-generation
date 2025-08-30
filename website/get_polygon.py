@@ -4,6 +4,7 @@
 import cgi
 import json
 import os
+import psycopg2
 import sys
 
 root = os.path.dirname(os.path.dirname(__file__))
@@ -60,24 +61,42 @@ elif format == "wkt":
 elif format == "poly":
     sql_func = "ST_AsText"
 
-if rel_id != [-1]:
-  sql1 = """SELECT ST_Union(geom)
-            FROM polygons WHERE id IN %s AND params = %s"""
-  param1 = (tuple(rel_id), params)
+if len(rel_id) == 1 and name == "":
+    sql = "SELECT " + sql_func + "(geom) FROM polygons WHERE id = %s AND params = %s"
+    param1 = (rel_id[0], params)
+    param2 = ()
 else:
-  sql1 = "SELECT 'SRID=4326;POINT EMPTY'::geometry"
-  param1 = ()
+    if rel_id != [-1]:
+        sql1 = """SELECT ST_Union(geom)
+                  FROM polygons WHERE id IN %s AND params = %s"""
+        param1 = (tuple(rel_id), params)
+    else:
+        sql1 = "SELECT 'SRID=4326;POINT EMPTY'::geometry"
+        param1 = ()
 
-if name != "":
-  sql2 = """SELECT geom
-           FROM polygons_user WHERE name = %s"""
-  param2 = (name, )
-else:
-  sql2 = "SELECT 'SRID=4326;POINT EMPTY'::geometry"
-  param2 = ()
+    if name != "":
+        sql2 = """SELECT geom
+                 FROM polygons_user WHERE name = %s"""
+        param2 = (name, )
+    else:
+        sql2 = "SELECT 'SRID=4326;POINT EMPTY'::geometry"
+        param2 = ()
 
-sql = "select " + sql_func + "(ST_Union((" + sql1 + "), (" + sql2 + ")))"
-PgCursor.execute(sql, param1 + param2)
+    sql = "select " + sql_func + "(ST_Union((" + sql1 + "), (" + sql2 + ")))"
+
+try:
+    PgCursor.execute(sql, param1 + param2)
+except psycopg2.errors.InternalError_ as e:
+    print("Status: 500 Internal Server Error")
+    if format == "geojson":
+        print("Content-Type: application/json; charset=utf-8")
+        print("")
+        print(json.dumps({"status": "ERROR", "message": e.pgerror}))
+    else:
+        print("Content-Type: text/plain; charset=utf-8")
+        print("")
+        print("Got error from database:\n" + e.pgerror)
+    sys.exit(0)
 
 results = PgCursor.fetchall()
 
