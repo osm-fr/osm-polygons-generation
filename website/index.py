@@ -252,10 +252,11 @@ for res in results:
     show("    <td>" + str(res["timestamp"]) + "</td>")
     show("    <td>" + str(res["npoints"]) + "</td>")
     show("    <td>" + str(res["length"]) + "</td>")
-    show("    <td><a href='get_wkt.py?id=%d&amp;params=%s'>WKT</a></td>" % (rel_id, str(res["params"])))
-    show("    <td><a href='get_geojson.py?id=%d&amp;params=%s'>GeoJSON</a></td>" % (rel_id, str(res["params"])))
-    show("    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>" % (rel_id, str(res["params"])))
-    show("    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>" % (rel_id, str(res["params"])))
+    if res["npoints"] is not None:
+        show("    <td><a href='get_wkt.py?id=%d&amp;params=%s'>WKT</a></td>" % (rel_id, str(res["params"])))
+        show("    <td><a href='get_geojson.py?id=%d&amp;params=%s'>GeoJSON</a></td>" % (rel_id, str(res["params"])))
+        show("    <td><a href='get_poly.py?id=%d&amp;params=%s'>poly</a></td>" % (rel_id, str(res["params"])))
+        show("    <td><a href='get_image.py?id=%d&amp;params=%s'>image</a></td>" % (rel_id, str(res["params"])))
     show("  </tr>")
 
 show("</table>")
@@ -275,7 +276,11 @@ show("<li>X = 0 will give a polygon similar to the original geometry.")
 show("<li>X < 0 will give a polygon smaller than the original geometry, and guaranteed to be smaller.")
 show("</ul>")
 
-if geom_length >= 10:
+if geom_length is None:
+    rec_x = 0.04
+    rec_y = 0.01
+    rec_z = 0.01
+elif geom_length >= 10:
     rec_x = 0.04
     rec_y = 0.01
     rec_z = 0.01
