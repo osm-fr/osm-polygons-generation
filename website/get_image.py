@@ -37,6 +37,39 @@ show = utils.show
 PgConn    = utils.get_dbconn()
 PgCursor  = PgConn.cursor()
 
+def get_bounds(rel_id, params, name):
+  if name != "" and rel_id != [-1]:
+    sql = """select ST_AsText(ST_Union((SELECT ST_Union(geom) from polygons
+                                        where id IN %s AND params = %s),
+                                       (SELECT geom from polygons_user
+                                        WHERE name = %s)))"""
+    sql_p = (tuple(rel_id), params, name)
+
+  elif name == "" and rel_id != [-1]:
+    sql = """select ST_AsText(ST_Union(geom))
+             from polygons where id IN %s AND params = %s"""
+    sql_p = (tuple(rel_id), params)
+
+  elif name != "" and rel_id == [-1]:
+    sql = """select ST_AsText(geom)
+             from polygons_user where name = %s"""
+    sql_p = (name, )
+
+  try:
+    PgCursor.execute(sql, sql_p)
+  except psycopg2.errors.InternalError_ as e:
+    print("Status: 500 Internal Server Error")
+    print("Content-Type: text/plain; charset=utf-8")
+    print("")
+    print("Got error from database:\n" + e.pgerror)
+    sys.exit(0)
+
+  results = PgCursor.fetchall()
+  wkt_geom = results[0][0]
+
+  geom = shapely.wkt.loads(wkt_geom)
+  return geom.bounds
+
 def draw_polygon(rel_id, params, name, color, zorder=0, label=""):
   if name != "" and rel_id != [-1]:
     sql = """select ST_AsText(ST_Union((SELECT ST_Union(geom) from polygons
@@ -80,8 +113,7 @@ def draw_polygon(rel_id, params, name, color, zorder=0, label=""):
       else:
         label_shown = True
         pyplot.plot(a[:,0], a[:,1], color=color, zorder=zorder, label=label)
-
-  return geom.bounds
+  return
 
 fig = pyplot.figure(1, dpi=100)
 
@@ -94,7 +126,7 @@ elif params != "0":
 else:
   label = "base geometry"
 
-(minx, miny, maxx, maxy) = draw_polygon(rel_id, params, name, "blue", zorder=10, label=label)
+(minx, miny, maxx, maxy) = get_bounds(rel_id, params, name)
 
 diff_x = maxx - minx
 diff_y = maxy - miny
@@ -120,6 +152,8 @@ ax = fig.add_subplot(111)
 ax.set_xlim(left=minx - 0.05*diff_x, right=maxx + 0.05*diff_x)
 ax.set_ylim(bottom=miny - 0.05*diff_y, top=maxy + 0.05*diff_y)
 ax.autoscale_view()
+
+draw_polygon(rel_id, params, name, "blue", zorder=10, label=label)
 
 if rel_id != [-1] and (params != "0" or name != ""):
   draw_polygon(rel_id, "0", "", "green", zorder=1, label="base geometry")
