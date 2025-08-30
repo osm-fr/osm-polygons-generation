@@ -62,8 +62,8 @@ class NonExistingRelation(Exception):
         pass
 
 class InvalidGeometry(Exception):
-    def __init__(self, pg_msg):
-        self.pg_msg = pg_msg
+    def __init__(self):
+        pass
 
 class InvalidSimplifiedGeometry(Exception):
     def __init__(self, pg_msg):
@@ -100,7 +100,7 @@ def create_polygon(pgcursor, rel_id):
     try:
         pgcursor.execute(sql_create, (rel_id, ))
     except psycopg2.InternalError:
-        raise InvalidGeometry(PgConn.notices)
+        raise InvalidGeometry()
 
     cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
     run = subprocess.Popen(cmd, stdout=subprocess.PIPE)

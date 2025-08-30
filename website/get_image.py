@@ -6,6 +6,7 @@ import cgitb
 import io
 import math
 import os
+import psycopg2
 import shutil
 import sys
 import tempfile
@@ -54,7 +55,14 @@ def draw_polygon(rel_id, params, name, color, zorder=0, label=""):
              from polygons_user where name = %s"""
     sql_p = (name, )
 
-  PgCursor.execute(sql, sql_p)
+  try:
+    PgCursor.execute(sql, sql_p)
+  except psycopg2.errors.InternalError_ as e:
+    print("Status: 500 Internal Server Error")
+    print("Content-Type: text/plain; charset=utf-8")
+    print("")
+    print("Got error from database:\n" + e.pgerror)
+    sys.exit(0)
 
   results = PgCursor.fetchall()
   wkt_geom = results[0][0]

@@ -47,6 +47,8 @@ if __name__ == "__main__":
             pprint.pprint(i.RelationFullRecur(int(args.read[1])))
         elif args.read[0] == "relation_geom":
             res = i.RelationGetWayGeom(int(args.read[1]), ["subarea", "land_area", "water_area", "collection", "admin_centre", "disputed_exclave"])
+            if res is None:
+                raise ValueError("Relation non existing")
             for (way_id, d) in res.items():
                 s = "LINESTRING(" + (",".join(["%s %s" % (n[0], n[1]) for n in d])) + ")"
                 print("%d	%s" % (way_id, s))

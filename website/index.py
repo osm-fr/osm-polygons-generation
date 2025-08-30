@@ -169,7 +169,7 @@ if y > 0 and z > 0:
 #        show("<li><a href='http://analyser.openstreetmap.fr/cgi-bin/index.py?relation=%d'>analyser using OSM API (slower)</a>." % rel_id)
         show("</ul>")
         show("Message from postgresql server:<br>")
-        show("%s" % parse_pg_notices(e.pg_msg))
+        show("%s" % parse_pg_notices(PgConn.notices))
         sys.exit(0)
 
     except utils.NonExistingRelation as e:
@@ -213,7 +213,7 @@ if len(results) == 0 or refresh or not found_param_0:
 #        show("<li><a href='http://analyser.openstreetmap.fr/cgi-bin/index.py?relation=%d'>analyser using OSM API (slower)</a>." % rel_id)
         show("</ul>")
         show("Message from postgresql server:<br>")
-        show("%s" % parse_pg_notices(e.pg_msg))
+        show("%s" % parse_pg_notices(PgConn.notices))
         sys.exit(0)
 
     except utils.NonExistingRelation as e:
