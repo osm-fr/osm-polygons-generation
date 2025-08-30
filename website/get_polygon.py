@@ -115,6 +115,7 @@ print("")
 if format == "poly":
     print("polygon")
     OsmGeom.write_multipolygon(sys.stdout, results[0][0])
+    print("END")
 else:
     for res in results:
         print(res[0])
