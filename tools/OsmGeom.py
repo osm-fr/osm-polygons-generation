@@ -33,7 +33,7 @@ def read_polygon_wkt(f):
             break
 
         line = line.strip()
-        if line == "END":
+        if line == b"END" or line == "END":
             break
 
         if not(line):
