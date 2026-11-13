@@ -1,10 +1,12 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
 
-import ast
-import psycopg2
 import re
 import subprocess
+
+import ast
+import psycopg2
+import psycopg2.extras
 
 ################################################################################
 
@@ -13,8 +15,6 @@ pg_pass           = "-polygons-"
 pg_base           = "polygons"
 
 def get_dbconn():
-    import psycopg2.extras
-#    return psycopg2.connect(host="localhost", database = pg_base, user = pg_user, password = pg_pass)
     db_string = "host='localhost' dbname='%s' user='%s' password='%s'" % (pg_base, pg_user, pg_pass)
     psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
     psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -33,8 +33,8 @@ class InvalidGeometry(Exception):
         pass
 
 class InvalidSimplifiedGeometry(Exception):
-    def __init__(self, pg_msg):
-        self.pg_msg = pg_msg
+    def __init__(self):
+        pass
 
 def check_polygon(pgcursor, rel_id, x=0, y=0, z=0, create=False):
     if rel_id < 0:
@@ -97,17 +97,17 @@ def simplify_polygon(pgcursor, rel_id, x, y, z):
     WHERE id = %s AND params = '0')
   );"""
     if x > 0:
-      sql_gen2 = sql_gen2_1 + "ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), " + sql_gen2_2
+        sql_gen2 = sql_gen2_1 + "ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), " + sql_gen2_2
     elif x == 0:
-      sql_gen2 = sql_gen2_1 + "(" + sql_gen2_2
+        sql_gen2 = sql_gen2_1 + "(" + sql_gen2_2
     else:
-      sql_gen2 = sql_gen2_1 + "ST_Intersection(geom, " + sql_gen2_2
+        sql_gen2 = sql_gen2_1 + "ST_Intersection(geom, " + sql_gen2_2
     pgcursor.execute(sql_gen1, (rel_id, params))
     try:
         pgcursor.execute(sql_gen2, (rel_id, params,
                                     x, y, z, rel_id))
     except psycopg2.InternalError:
-        raise InvalidSimplifiedGeometry(PgConn.notices)
+        raise InvalidSimplifiedGeometry()
 
 def parse_pg_notices(notices):
     re_lat_lon = re.compile("(.*point) ([-0-9.]*)f ([-0-9.]*)f - ways: (.*)$")
