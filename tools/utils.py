@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import io
 import re
-import subprocess
 
-import ast
 import psycopg2
 import psycopg2.extras
+from tools.modules import OsmBin
 
 ################################################################################
 
@@ -60,26 +60,32 @@ def check_polygon(pgcursor, rel_id, x=0, y=0, z=0, create=False):
 def create_polygon(pgcursor, rel_id):
     pgcursor.execute("DROP TABLE IF EXISTS tmp_way_poly_%d" % rel_id)
     pgcursor.execute("CREATE TABLE tmp_way_poly_%d (id integer, linestring geometry);" % rel_id)
-    cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation_geom", "%d" % rel_id)
-    try:
-        run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    except:
+
+    osmbin = OsmBin.OsmBin("/data/work/osmbin/data")
+    rel_osmbin = osmbin.RelationGetWayGeom(rel_id, ["subarea", "land_area", "water_area", "collection", "admin_centre", "disputed_exclave"])
+    if rel_osmbin is None:
         raise NonExistingRelation
-    pgcursor.copy_from(run.stdout, "tmp_way_poly_%d" % rel_id)
+
+    rel_geom = io.StringIO()
+    for (way_id, d) in rel_osmbin.items():
+        s = "LINESTRING(" + (",".join(["%s %s" % (n[0], n[1]) for n in d])) + ")"
+        rel_geom.write("%d	%s\n" % (way_id, s))
+
+    rel_geom.seek(0)
+    pgcursor.copy_from(rel_geom, "tmp_way_poly_%d" % rel_id)
     sql_create = "select create_polygon2(%s);"
     try:
         pgcursor.execute(sql_create, (rel_id, ))
     except psycopg2.InternalError:
         raise InvalidGeometry()
 
-    cmd = ("../tools/osmbin.py", "--dir", "/data/work/osmbin/data", "--read", "relation", "%d" % rel_id)
-    run = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    j = ast.literal_eval(run.stdout.read().decode("utf-8"))
-    if not j:
+    rel_osm = osmbin.RelationGet(rel_id)
+
+    if not rel_osm:
         raise NonExistingRelation
 
     pgcursor.execute("DELETE FROM relations WHERE id = %s", (rel_id, ))
-    pgcursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, j["tag"]))
+    pgcursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, rel_osm["tag"]))
 
 def simplify_polygon(pgcursor, rel_id, x, y, z):
     if not check_polygon(pgcursor, rel_id):

@@ -51,7 +51,7 @@ import os
 import sys
 import unittest
 
-from modules.lockfile import lockfile
+from tools.modules.lockfile import lockfile
 
 from . import OsmReader
 

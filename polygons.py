@@ -1,6 +1,4 @@
 import io
-import os
-import sys
 from typing import Annotated
 
 from fastapi import FastAPI, Form, Path, Request, Query
@@ -11,13 +9,11 @@ import psycopg2
 import seaborn as sns
 import shapely.wkt
 
-root_dir = os.path.dirname(os.path.dirname(__file__))
-sys.path.append(root_dir)
 from tools import utils
 from tools import OsmGeom
 
 app = FastAPI(root_path="/dev")
-templates = Jinja2Templates(directory="../templates")
+templates = Jinja2Templates(directory="templates")
 
 def get_state_timestamp(name):
     f = open(name)
