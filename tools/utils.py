@@ -2,14 +2,12 @@
 #-*- coding: utf-8 -*-
 
 import ast
-import os
 import psycopg2
 import re
 import subprocess
 
 ################################################################################
 
-root_folder       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 pg_user           = "polygons"
 pg_pass           = "-polygons-"
 pg_base           = "polygons"
@@ -23,37 +21,6 @@ def get_dbconn():
     conn = psycopg2.extras.DictConnection(db_string)
     psycopg2.extras.register_hstore(conn)
     return conn
-
-def show(s):
-    print(s)
-
-def multiple_replace(dict, text):
-
-  """ Replace in 'text' all occurences of any key in the given
-  dictionary by its corresponding value.  Returns the new tring."""
-
-  # Create a regular expression  from the dictionary keys
-  regex = re.compile("(%s)" % "|".join(map(re.escape, dict.keys())))
-
-  # For each match, look-up corresponding value in dictionary
-  return regex.sub(lambda mo: dict[mo.string[mo.start():mo.end()]], text)
-
-
-def print_template(filename, rules = None):
-    page = open(os.path.join(root_folder, "templates", filename)).read()
-    if rules:
-        r = {}
-        for (k, v) in rules.items():
-            r["#%s#" % k] = v
-        page = multiple_replace(r, page)
-    print(page)
-
-def print_header(title = ""):
-    rules = {"title": title}
-    print_template("head.tpl", rules)
-
-def print_tail():
-    print_template("tail.tpl")
 
 ################################################################################
 
@@ -70,6 +37,9 @@ class InvalidSimplifiedGeometry(Exception):
         self.pg_msg = pg_msg
 
 def check_polygon(pgcursor, rel_id, x=0, y=0, z=0, create=False):
+    if rel_id < 0:
+        raise NonExistingRelation
+
     if (x, y, z) == (0, 0, 0):
         params = "0"
     else:
@@ -138,3 +108,22 @@ def simplify_polygon(pgcursor, rel_id, x, y, z):
                                     x, y, z, rel_id))
     except psycopg2.InternalError:
         raise InvalidSimplifiedGeometry(PgConn.notices)
+
+def parse_pg_notices(notices):
+    re_lat_lon = re.compile("(.*point) ([-0-9.]*)f ([-0-9.]*)f - ways: (.*)$")
+    out = []
+    for line in notices:
+        m = re_lat_lon.match(line)
+        if m:
+            lon = float(m.group(2))
+            lat = float(m.group(3))
+            ways = m.group(4).split(" ")
+            out.append({"lon": lon, "lat": lat,
+                        "ways": [int(i) for i in ways],
+                        "start_line": m.group(1),
+                       })
+        elif line.endswith("does not exist, skipping\n"):
+            pass
+        else:
+            out.append({"line": line})
+    return out

@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>{{ title }}</title>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <link rel="icon" type="image/png" href="static/favicon.png">
+  <link rel="stylesheet" type="text/css" href="static/style.css">
+  <script src="static/sorttable.js" type="text/javascript"></script>
+</head>
+
+<body>
+<h1>{{ title }}</h1>
+<p>Database was last updated on: {{ last_update }}</p>
+<p>This will generate the whole geometry of the given OSM relation id, with the corresponding sub-relations. When the geometry is available, it is possible to generate simplified geometries from this one, and export them as .poly, GeoJSON, WKT or image formats.</p>
+<form method='GET' action='' id='form_relation'>
+<label for='id'>Id of relation</label>
+<input type='text' name='id' id='id'>
+<input type='submit'>
+</form>
+<script>
+  document.getElementById('form_relation').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const id = document.getElementById('id').value;
+    window.location.href = 'relation/' + encodeURIComponent(id);
+  });
+</script>
+<br>
+
+<h1>Import of an user polygon</h1>
+<p>Use this if you want to import your own .poly file, and do union operations with OSM relations.</p>
+<form method='POST' action='import_poly.py' enctype='multipart/form-data'>
+<label for='name'>Name</label>
+<input type='text' name='name' id='name'>
+<label for='poly'>.poly file</label>
+<input type='file' name='poly' id='poly'>
+<input type='submit'>
+</form>
+<br>
+
+<h1>List of recently generated polygons</h1>
+
+<p>Here are the latest generated polygons with this application.</p>
+<table class='sortable'>
+  <tr>
+    <th>id</th>
+    <th class='sorttable_sorted_reverse'>timestamp<span id='sorttable_sortrevind'>&nbsp;▴</span></th>
+    <th>name</th>
+    <th>admin</th>
+  </tr>
+  {% for res in last_polygons %}
+  <tr>
+    <td><a href='relation/{{ res["id"] }}'>{{ res["id"] }}</a></td>
+    <td>{{ res["timestamp"] }}</td>
+    {% if "tags" in res and "name" in res["tags"] %}
+    <td>{{ res["tags"]["name"] }}</td>
+    {% else %}
+    <td></td>
+    {% endif %}
+    {% if "admin_level" in res["tags"] and "admin_level" in res["tags"] %}
+    <td>{{ res["tags"]["admin_level"] }}</td>
+    {% else %}
+    <td></td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+
+
+</body>
+</html>

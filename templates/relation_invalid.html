@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Polygon creation for {{ id }}</title>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <link rel="icon" type="image/png" href="../static/favicon.png">
+  <link rel="stylesheet" type="text/css" href="../static/style.css">
+</head>
+
+<body>
+<h1>Error when generation polygon for id = {{ id }}</h1>
+
+Error while generating polygon. You could check the geometry through an analyser:
+<ul>
+<li><a href='analyse-relation-open.py?id={{ id }}'>analyser using an internal database</a>
+<li><a href='http://ra.osmsurround.org/analyzeRelation?relationId={{ id }}'>Relation analysis</a>
+<li><a href='http://ra.osmsurround.org/analyzeMap?relationId={{ id }}'>Relation analysis with map</a>
+</ul>
+
+<h3>Message from postgresql server</h3>
+
+{% for n in notices %}
+{%   if "lat" in n and "lon" in n %}
+{%     set lat = n["lat"] %}
+{%     set lon = n["lon"] %}
+{{     n["start_line"] }}
+<a target='josm' href='http://127.0.0.1:8111/zoom?left={{ lon-0.0005 }}&right={{ lon+0.0005 }}&top={{ lat+0.0005 }}&bottom={{ lat-0.0005 }}'>{{ lon }}f {{ lat }}f</a>
+- ways
+{%     for way_id in n["ways"] %}
+<a target='josm' href='http://127.0.0.1:8111/load_and_zoom?left={{ lon-0.005 }} &right={{ lon+0.005 }}&top={{ lat+0.005 }}&bottom={{ lat-0.005 }}&select=way{{ way_id }}'>{{ way_id }}</a>
+{%     endfor %}
+{%   else %}
+{{     n["line"] }}
+{%   endif %}
+<br>
+{% endfor %}
+
+</body>
+</html>

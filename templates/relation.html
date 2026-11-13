@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Polygon creation for {{ id }}</title>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <link rel="icon" type="image/png" href="../static/favicon.png">
+  <link rel="stylesheet" type="text/css" href="../static/style.css">
+  <script src="../static/sorttable.js" type="text/javascript"></script>
+</head>
+
+<body>
+<h1>List of available polygons for id = {{ id }}</h1>
+
+<table class='sortable'>
+  <tr>
+    <th class='sorttable_sorted_reverse'>params<span id='sorttable_sortrevind'>&nbsp;▴</span></th>
+    <th>timestamp</th>
+    <th>NPoints</th>
+    <th>Length</th>
+    <th>WKT</th>
+    <th>GeoJSON</th>
+    <th>poly</th>
+    <th>Image</th>
+  </tr>
+
+  {% for res in polygons %}
+  <tr>
+    <td>{{ res["params"] }}</td>
+    <td>{{ res["timestamp"] }}</td>
+    <td>{{ res["npoints"] }}</td>
+    <td>{{ res["length"] }}</td>
+    {% if res["npoints"] is not none and res["npoints"] > 0 %}
+    {%   if res["params"] == "0" %}
+    <td><a href='{{ id }}.wkt'>WKT</a></td>
+    <td><a href='{{ id }}.geojson'>GeoJSON</a></td>
+    <td><a href='{{ id }}.poly'>poly</a></td>
+    <td><a href='{{ id }}.png'>image</a></td>
+    {%   else %}
+    {% set val = res["params"].split("-") %}
+    {% set p = "x=%s&y=%s&z=%s" % (val[0], val[1], val[2]) %}
+    <td><a href='{{ id }}.wkt?{{ p }}'>WKT</a></td>
+    <td><a href='{{ id }}.geojson?{{ p }}'>GeoJSON</a></td>
+    <td><a href='{{ id }}.poly?{{ p }}'>poly</a></td>
+    <td><a href='{{ id }}.png?{{ p }}'>image</a></td>
+    {%   endif %}
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+
+<br>
+<form method='POST' action=''>
+  <input type="hidden" name="refresh" value="1">
+  <input type='submit' value='Refresh original geometry'>
+</form>
+
+<h3>Generate a simplified polygon</h3>
+
+<p>X, Y, Z are parameters for the following postgis equation. The default values are chosen according to the size of the original geometry to give a slighty bigger geometry, without too many nodes.</p>
+Note that:
+<ul>
+<li>X &gt; 0 will give a polygon bigger than the original geometry, and guaranteed to contain it.
+<li>X = 0 will give a polygon similar to the original geometry.
+<li>X &lt; 0 will give a polygon smaller than the original geometry, and guaranteed to be smaller.
+</ul>
+
+<form method='POST' action=''>
+  <input type="hidden" name="refresh" value="1">
+  <label for='x'>X</label>
+  <input type='text' name='x' id='x' value='{{ rec_x }}'><br>
+  <label for='y'>Y</label>
+  <input type='text' name='y' id='y' value='{{ rec_y }}'><br>
+  <label for='z'>Z</label>
+  <input type='text' name='z' id='z' value='{{ rec_z }}'><br>
+  <input type='submit' name='generate'>
+</form>
+
+<hr>
+SQL requests:
+<ul>
+<li>X &gt; 0: <code>ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), ST_Buffer(ST_SimplifyPreserveTopology(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z)))</code>
+<li>X = 0: <code>ST_Buffer(ST_SimplifyPreserveTopology(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z)))</code>
+<li>X &lt; 0: <code>ST_Intersection(geom, ST_Buffer(ST_SimplifyPreserveTopology(ST_SnapToGrid(ST_Buffer(geom, X), Y), Z)))</code>
+</ul>
+
+</body>
+</html>
