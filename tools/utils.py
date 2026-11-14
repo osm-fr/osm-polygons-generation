@@ -4,23 +4,20 @@
 import io
 import re
 
-import psycopg2
-import psycopg2.extras
+import asyncpg
 from tools.modules import OsmBin
 
 ################################################################################
 
-pg_user           = "polygons"
-pg_pass           = "-polygons-"
-pg_base           = "polygons"
+DATABASE_URL = "postgresql://polygons:-polygons-@localhost/polygons"
 
-def get_dbconn():
-    db_string = "host='localhost' dbname='%s' user='%s' password='%s'" % (pg_base, pg_user, pg_pass)
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-    psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-    conn = psycopg2.extras.DictConnection(db_string)
-    psycopg2.extras.register_hstore(conn)
-    return conn
+async def init_connection(conn):
+    await conn.set_builtin_type_codec('hstore', codec_name='pg_contrib.hstore')
+
+def create_pgnotice_collector(notices_list: list):
+    async def notice_collector(connection, message):
+        notices_list.append(message.message)
+    return notice_collector
 
 ################################################################################
 
@@ -36,7 +33,7 @@ class InvalidSimplifiedGeometry(Exception):
     def __init__(self):
         pass
 
-def check_polygon(pgcursor, rel_id, x=0, y=0, z=0, create=False):
+async def check_polygon(conn, rel_id, x=0, y=0, z=0, create=False):
     if rel_id < 0:
         raise NonExistingRelation
 
@@ -44,39 +41,42 @@ def check_polygon(pgcursor, rel_id, x=0, y=0, z=0, create=False):
         params = "0"
     else:
         params = "%f-%f-%f" % (x, y, z)
-    pgcursor.execute("SELECT id FROM polygons WHERE id = %s AND params = %s", (rel_id, params))
-    if pgcursor.fetchone():
+
+    exists = await conn.fetchval("SELECT 1 FROM polygons WHERE id = $1 AND params = $2", rel_id, params)
+    if exists:
         return True
 
     if create:
         if (x, y, z) == (0, 0, 0):
-            create_polygon(pgcursor, rel_id)
+            await create_polygon(conn, rel_id)
         else:
-            simplify_polygon(pgcursor, rel_id, x, y, z)
+            await simplify_polygon(conn, rel_id, x, y, z)
         return True
 
     return False
 
-def create_polygon(pgcursor, rel_id):
-    pgcursor.execute("DROP TABLE IF EXISTS tmp_way_poly_%d" % rel_id)
-    pgcursor.execute("CREATE TABLE tmp_way_poly_%d (id integer, linestring geometry);" % rel_id)
+async def create_polygon(conn, rel_id):
+    tmp_table_name = f"tmp_way_poly_{int(rel_id)}"
+    await conn.execute(f"DROP TABLE IF EXISTS {tmp_table_name}")
+    await conn.execute(f"CREATE TABLE {tmp_table_name} (id integer, linestring geometry);")
 
     osmbin = OsmBin.OsmBin("/data/work/osmbin/data")
     rel_osmbin = osmbin.RelationGetWayGeom(rel_id, ["subarea", "land_area", "water_area", "collection", "admin_centre", "disputed_exclave"])
     if rel_osmbin is None:
         raise NonExistingRelation
 
-    rel_geom = io.StringIO()
+    rel_geom = io.BytesIO()
     for (way_id, d) in rel_osmbin.items():
         s = "LINESTRING(" + (",".join(["%s %s" % (n[0], n[1]) for n in d])) + ")"
-        rel_geom.write("%d	%s\n" % (way_id, s))
+        line = "%d	%s\n" % (way_id, s)
+        rel_geom.write(line.encode("ascii"))
 
     rel_geom.seek(0)
-    pgcursor.copy_from(rel_geom, "tmp_way_poly_%d" % rel_id)
-    sql_create = "select create_polygon2(%s);"
+    await conn.copy_to_table(tmp_table_name, source=rel_geom)
+    sql_create = "SELECT create_polygon2($1);"
     try:
-        pgcursor.execute(sql_create, (rel_id, ))
-    except psycopg2.InternalError:
+        await conn.execute(sql_create, rel_id)
+    except asyncpg.PostgresError:
         raise InvalidGeometry()
 
     rel_osm = osmbin.RelationGet(rel_id)
@@ -84,23 +84,23 @@ def create_polygon(pgcursor, rel_id):
     if not rel_osm:
         raise NonExistingRelation
 
-    pgcursor.execute("DELETE FROM relations WHERE id = %s", (rel_id, ))
-    pgcursor.execute("INSERT INTO relations VALUES (%s, %s)", (rel_id, rel_osm["tag"]))
+    await conn.execute("DELETE FROM relations WHERE id = $1", rel_id)
+    await conn.execute("INSERT INTO relations VALUES ($1, $2)", rel_id, rel_osm["tag"])
 
-def simplify_polygon(pgcursor, rel_id, x, y, z):
-    if not check_polygon(pgcursor, rel_id):
-        create_polygon(pgcursor, rel_id)
+async def simplify_polygon(conn, rel_id, x, y, z):
+    if not await check_polygon(conn, rel_id):
+        await create_polygon(conn, rel_id)
 
     params = "%f-%f-%f" % (x, y, z)
-    sql_gen1 = "DELETE FROM polygons WHERE id = %s AND params = %s"
+    sql_gen1 = "DELETE FROM polygons WHERE id = $1 AND params = $2"
     sql_gen2_1 = """INSERT INTO polygons VALUES
-  (%s,
-   %s,
+  ($1,
+   $2,
    NOW(),
    (SELECT """
-    sql_gen2_2 = """ST_Buffer(ST_SimplifyPreserveTopology(ST_Buffer(ST_SnapToGrid(st_buffer(geom, %s), %s), 0), %s), 0))
+    sql_gen2_2 = """ST_Buffer(ST_SimplifyPreserveTopology(ST_Buffer(ST_SnapToGrid(st_buffer(geom, $3), $4), 0), $5), 0))
     FROM polygons
-    WHERE id = %s AND params = '0')
+    WHERE id = $1 AND params = '0')
   );"""
     if x > 0:
         sql_gen2 = sql_gen2_1 + "ST_Union(ST_MakeValid(ST_SimplifyPreserveTopology(geom, 0.00001)), " + sql_gen2_2
@@ -108,11 +108,10 @@ def simplify_polygon(pgcursor, rel_id, x, y, z):
         sql_gen2 = sql_gen2_1 + "(" + sql_gen2_2
     else:
         sql_gen2 = sql_gen2_1 + "ST_Intersection(geom, " + sql_gen2_2
-    pgcursor.execute(sql_gen1, (rel_id, params))
+    await conn.execute(sql_gen1, rel_id, params)
     try:
-        pgcursor.execute(sql_gen2, (rel_id, params,
-                                    x, y, z, rel_id))
-    except psycopg2.InternalError:
+        await conn.execute(sql_gen2, rel_id, params, x, y, z)
+    except asyncpg.PostgresError:
         raise InvalidSimplifiedGeometry()
 
 def parse_pg_notices(notices):
