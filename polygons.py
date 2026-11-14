@@ -8,9 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Form, HTTPException, Path, Request, Query, UploadFile, status
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-import matplotlib.pyplot as plt
-import seaborn as sns
-import shapely.wkt
+from starlette.concurrency import run_in_threadpool
 
 from tools import utils
 from tools import OsmGeom
@@ -141,22 +139,7 @@ async def relation_png(relation_id: int,
         status_code = 404
         return JSONResponse(content=content, status_code=status_code)
     else:
-        geom = shapely.wkt.loads(wkt_geom)
-        sns.set_theme()
-        if hasattr(geom, "exterior"):
-            a = shapely.get_coordinates(geom.exterior)
-            scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
-        else:
-            for g in geom.geoms:
-                a = shapely.get_coordinates(g.exterior)
-                scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
-
-        scatter_fig = scatter_plot.get_figure()
-        scatter_fig.set_size_inches(10, 10)
-        content = io.BytesIO()
-        scatter_fig.savefig(content, format="png")
-        plt.close(scatter_fig)
-        content.seek(0)
+        content = await run_in_threadpool(utils.render_png, wkt_geom)
         status_code = 200
 
     return StreamingResponse(content=content, media_type="image/png", status_code=status_code)
@@ -368,22 +351,7 @@ async def user_polygon_png(name: str,
         status_code = 404
         return JSONResponse(content=content, status_code=status_code)
     else:
-        geom = shapely.wkt.loads(wkt_geom)
-        sns.set_theme()
-        if hasattr(geom, "exterior"):
-            a = shapely.get_coordinates(geom.exterior)
-            scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
-        else:
-            for g in geom.geoms:
-                a = shapely.get_coordinates(g.exterior)
-                scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
-
-        scatter_fig = scatter_plot.get_figure()
-        scatter_fig.set_size_inches(10, 10)
-        content = io.BytesIO()
-        scatter_fig.savefig(content, format="png")
-        plt.close(scatter_fig)
-        content.seek(0)
+        content = await run_in_threadpool(utils.render_png, wkt_geom)
         status_code = 200
 
     return StreamingResponse(content=content, media_type="image/png", status_code=status_code)
@@ -565,22 +533,7 @@ async def union_png(relations_id: Annotated[str, Path(description="List of relat
         status_code = 404
         return JSONResponse(content=content, status_code=status_code)
     else:
-        geom = shapely.wkt.loads(wkt_geom)
-        sns.set_theme()
-        if hasattr(geom, "exterior"):
-            a = shapely.get_coordinates(geom.exterior)
-            scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
-        else:
-            for g in geom.geoms:
-                a = shapely.get_coordinates(g.exterior)
-                scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
-
-        scatter_fig = scatter_plot.get_figure()
-        scatter_fig.set_size_inches(10, 10)
-        content = io.BytesIO()
-        scatter_fig.savefig(content, format="png")
-        plt.close(scatter_fig)
-        content.seek(0)
+        content = await run_in_threadpool(utils.render_png, wkt_geom)
         status_code = 200
 
     return StreamingResponse(content=content, media_type="image/png", status_code=status_code)

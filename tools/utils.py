@@ -3,8 +3,12 @@
 
 import io
 import re
+from threading import Lock
 
 import asyncpg
+import matplotlib.pyplot as plt
+import seaborn as sns
+import shapely.wkt
 from tools.modules import OsmBin
 
 ################################################################################
@@ -132,3 +136,30 @@ def parse_pg_notices(notices):
         else:
             out.append({"line": line})
     return out
+
+################################################################################
+
+_png_lock = Lock()
+
+def render_png(wkt_geom: str) -> io.BytesIO:
+    geom = shapely.wkt.loads(wkt_geom)
+    content = io.BytesIO()
+
+    with _png_lock:
+        fig, ax = plt.subplots(figsize=(10, 10))
+        try:
+            if hasattr(geom, "exterior"):
+                polygons = [geom]
+            else:
+                polygons = geom.geoms
+
+            for polygon in polygons:
+                coords = shapely.get_coordinates(polygon.exterior)
+                sns.lineplot(x=coords[:,0], y=coords[:,1], sort=False, estimator=None, ax=ax)
+
+            fig.savefig(content, format="png")
+        finally:
+            plt.close(fig)
+
+    content.seek(0)
+    return content
