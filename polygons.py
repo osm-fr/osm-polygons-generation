@@ -30,11 +30,14 @@ async def get_db_connection(request: Request):
         yield connection
 
 def get_state_timestamp(name):
-    f = open(name)
-    for line in f:
-        (key, sep, value) = line.partition("=")
-        if key.strip() == "timestamp":
-            return value.replace("\\", "")
+    try:
+        with open(name, encoding="utf-8") as f:
+            for line in f:
+                (key, _, value) = line.partition("=")
+                if key.strip() == "timestamp":
+                    return value.replace("\\", "")
+    except OSError:
+        return ""
 
     return ""
 
