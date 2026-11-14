@@ -1,9 +1,11 @@
 import io
+import random
+import string
 from typing import Annotated
 
 import asyncpg
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, Form, Path, Request, Query
+from fastapi import FastAPI, Depends, Form, HTTPException, Path, Request, Query, UploadFile, status
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import matplotlib.pyplot as plt
@@ -56,6 +58,12 @@ async def root(request: Request,
                   ORDER BY timestamp DESC
                   LIMIT 20"""
     context["last_polygons"] = await conn.fetch(sql_list)
+
+    sql_list = """SELECT name, timestamp
+                  FROM polygons_user
+                  ORDER BY timestamp DESC
+                  LIMIT 20"""
+    context["last_user_polygons"] = await conn.fetch(sql_list)
 
     return templates.TemplateResponse(request=request, name="index.html", context=context)
 
@@ -314,17 +322,178 @@ async def relation_root(request: Request,
 
     return templates.TemplateResponse(request=request, name="relation.html", context=context)
 
+# ------------
+# User polygon
+# ------------
+
+@app.get("/user_polygon/{name}.geojson", response_class=JSONResponse)
+async def user_polygon_json(name: str,
+                            conn: asyncpg.Connection = Depends(get_db_connection)
+                           ):
+
+    sql_list = """SELECT ST_AsGeoJSON(geom)
+                  FROM polygons_user WHERE name = $1"""
+    try:
+        content = await conn.fetchval(sql_list, name)
+    except asyncpg.PostgresError as e:
+        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
+        status_code = 500
+        return JSONResponse(content=content, status_code=status_code)
+
+    if content is None:
+        content = {"status": "ERROR", "message": "Relation wasn't generated"}
+        status_code = 404
+        return JSONResponse(content=content, status_code=status_code)
+    else:
+        status_code = 200
+
+    return JSONResponse(content=content, status_code=status_code)
+
+@app.get("/user_polygon/{name}.png", response_class=PNGStreamingResponse)
+async def user_polygon_png(name: str,
+                           conn: asyncpg.Connection = Depends(get_db_connection)
+                          ):
+
+    sql_list = """SELECT ST_AsText(ST_Union(geom))
+                  FROM polygons_user WHERE name = $1"""
+    try:
+        wkt_geom = await conn.fetchval(sql_list, name)
+    except asyncpg.PostgresError as e:
+        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
+        status_code = 500
+        return JSONResponse(content=content, status_code=status_code)
+
+    if wkt_geom is None:
+        content = {"status": "ERROR", "message": "Relation wasn't generated"}
+        status_code = 404
+        return JSONResponse(content=content, status_code=status_code)
+    else:
+        geom = shapely.wkt.loads(wkt_geom)
+        sns.set_theme()
+        if hasattr(geom, "exterior"):
+            a = shapely.get_coordinates(geom.exterior)
+            scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
+        else:
+            for g in geom.geoms:
+                a = shapely.get_coordinates(g.exterior)
+                scatter_plot = sns.lineplot(x=a[:,0], y=a[:,1], sort=False, estimator=None)
+
+        scatter_fig = scatter_plot.get_figure()
+        scatter_fig.set_size_inches(10, 10)
+        content = io.BytesIO()
+        scatter_fig.savefig(content, format="png")
+        plt.close(scatter_fig)
+        content.seek(0)
+        status_code = 200
+
+    return StreamingResponse(content=content, media_type="image/png", status_code=status_code)
+
+@app.get("/user_polygon/{name}.poly", response_class=PlainTextResponse)
+async def user_polygon_poly(name: str,
+                            conn: asyncpg.Connection = Depends(get_db_connection)
+                           ):
+
+    sql_list = """SELECT ST_AsText(geom)
+                  FROM polygons_user WHERE name = $1"""
+    try:
+        content = await conn.fetchval(sql_list, name)
+    except asyncpg.PostgresError as e:
+        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
+        status_code = 500
+        return JSONResponse(content=content, status_code=status_code)
+
+    if content is None:
+        content = {"status": "ERROR", "message": "Relation wasn't generated"}
+        status_code = 404
+        return JSONResponse(content=content, status_code=status_code)
+    else:
+        poly_io = io.StringIO()
+        OsmGeom.write_multipolygon(poly_io, content)
+        content = "polygon\n" + poly_io.getvalue() + "END"
+        status_code = 200
+
+    return PlainTextResponse(content=content, status_code=status_code)
+
+@app.get("/user_polygon/{name}.wkt", response_class=PlainTextResponse)
+async def user_polygon_wkt(name: str,
+                           conn: asyncpg.Connection = Depends(get_db_connection)
+                          ):
+
+    sql_list = """SELECT ST_AsEWKT(geom)
+                  FROM polygons_user WHERE name = $1"""
+    try:
+        content = await conn.fetchval(sql_list, name)
+    except asyncpg.PostgresError as e:
+        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
+        status_code = 500
+        return JSONResponse(content=content, status_code=status_code)
+
+    if content is None:
+        content = {"status": "ERROR", "message": "Relation wasn't generated"}
+        status_code = 404
+        return JSONResponse(content=content, status_code=status_code)
+    else:
+        status_code = 200
+
+    return PlainTextResponse(content=content, media_type="text/wkt", status_code=status_code)
+
+@app.post("/user_polygon", response_class=HTMLResponse)
+async def user_polygon_create(request: Request,
+                              name: Annotated[str, Form()],
+                              poly: UploadFile,
+                              conn: asyncpg.Connection = Depends(get_db_connection)
+                             ):
+    char_set = string.ascii_lowercase + string.digits
+    name += "_" + (''.join(random.sample(char_set*6,6)))
+
+    wkt = OsmGeom.read_multipolygon_wkt(poly.file)
+
+    sql_list = """INSERT INTO polygons_user
+                  VALUES ($1, NOW(), ST_GeomFromText($2, 4326))"""
+    try:
+        await conn.execute(sql_list, name, wkt)
+    except asyncpg.PostgresError as e:
+        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
+        status_code = 500
+        return JSONResponse(content=content, status_code=status_code)
+
+    return RedirectResponse(url='user_polygon/' + str(name), status_code=status.HTTP_303_SEE_OTHER)
+
+@app.get("/user_polygon/{name}", response_class=HTMLResponse)
+async def user_polygon(request: Request,
+                       name: str,
+                       relation_id: int | None = None,
+                       conn: asyncpg.Connection = Depends(get_db_connection)
+                      ):
+    context = {"name": name}
+
+    sql_list = """SELECT name, timestamp, ST_NPoints(geom) AS npoints,
+                         ST_MaxDistance(geom, geom) AS length
+                  FROM polygons_user WHERE name LIKE $1
+                  ORDER BY name"""
+    context["user_polygons"] = await conn.fetch(sql_list, name)
+
+    if relation_id is not None:
+        sql_list = """SELECT params
+                      FROM polygons WHERE id = $1
+                      ORDER BY params"""
+        context["rel_polygons"] = await conn.fetch(sql_list, relation_id)
+        context["relation_id"] = relation_id
+
+    return templates.TemplateResponse(request=request, name="user_polygon.html", context=context)
+
 # ------------------
 # Union of relations
 # ------------------
 
-@app.get("/union/{relations_id}.geojson", response_class=JSONResponse)
-async def union_json(relations_id: Annotated[str, Path(description="List of relation ids, separated by ','", pattern="^[0-9]+(,[0-9]+)*$")],
-                     x: float | None = None,
-                     y: float | None = None,
-                     z: float | None = None,
-                     conn: asyncpg.Connection = Depends(get_db_connection)
-                    ):
+async def union_start(conn: asyncpg.Connection,
+                      sql_func: str,
+                      relations_id: str,
+                      x: float | None = None,
+                      y: float | None = None,
+                      z: float | None = None,
+                      name: str | None = None
+                      ):
 
     relations_id = [int(_) for _ in relations_id.split(",")]
 
@@ -341,17 +510,35 @@ async def union_json(relations_id: Annotated[str, Path(description="List of rela
     except (utils.NonExistingRelation,
             utils.InvalidGeometry,
             utils.InvalidSimplifiedGeometry) as e:
-        content = {"status": "ERROR", "message": "Polygon couldn't be generated - " + repr(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
+        raise HTTPException(status_code=500, detail="Polygon couldn't be generated - " + repr(e))
 
-    sql_list = """SELECT ST_AsGeoJSON(ST_Union(geom))
-                  FROM polygons WHERE id = ANY($1) AND params = $2"""
     try:
-        content = await conn.fetchval(sql_list, relations_id, params)
+        if name is None:
+            sql_list = f"""SELECT {sql_func}(ST_Union(geom))
+                           FROM polygons WHERE id = ANY($1) AND params = $2"""
+            content = await conn.fetchval(sql_list, relations_id, params)
+        else:
+            sql_list = f"""SELECT {sql_func}(ST_Union(
+                              (SELECT ST_Union(geom)
+                               FROM polygons WHERE id = ANY($1) AND params = $2),
+                              (SELECT ST_Union(geom)
+                               FROM polygons_user WHERE name = $3)))"""
+            content = await conn.fetchval(sql_list, relations_id, params, name)
     except asyncpg.PostgresError as e:
-        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
-        status_code = 500
+        raise HTTPException(status_code=500, detail="Database error while generating polygon:" + str(e))
+
+    return content
+
+@app.get("/union/{relations_id}.geojson", response_class=JSONResponse)
+async def union_json(relations_id: Annotated[str, Path(description="List of relation ids, separated by ','", pattern="^[0-9]+(,[0-9]+)*$")],
+                     x: float | None = None,
+                     y: float | None = None,
+                     z: float | None = None,
+                     name: str | None = None,
+                     conn: asyncpg.Connection = Depends(get_db_connection)
+                    ):
+
+    content = await union_start(conn, "ST_AsGeoJSON", relations_id, x, y, z, name)
 
     if content is None:
         content = {"status": "ERROR", "message": "Relation wasn't generated"}
@@ -367,35 +554,11 @@ async def union_png(relations_id: Annotated[str, Path(description="List of relat
                     x: float | None = None,
                     y: float | None = None,
                     z: float | None = None,
+                    name: str | None = None,
                     conn: asyncpg.Connection = Depends(get_db_connection)
                    ):
 
-    relations_id = [int(_) for _ in relations_id.split(",")]
-
-    if x is None or y is None or z is None:
-        (x, y, z) = (0, 0, 0)
-        params = "0"
-    else:
-        params = "%f-%f-%f" % (x, y, z)
-
-    try:
-        async with conn.transaction():
-            for rel_id in relations_id:
-                await utils.check_polygon(conn, rel_id, x, y, z, create=True)
-    except (utils.NonExistingRelation,
-            utils.InvalidGeometry,
-            utils.InvalidSimplifiedGeometry) as e:
-        content = {"status": "ERROR", "message": "Polygon couldn't be generated - " + repr(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
-
-    sql_list = """SELECT ST_AsText(ST_Union(geom))
-                  FROM polygons WHERE id = ANY($1) AND params = $2"""
-    try:
-        wkt_geom = await conn.fetchval(sql_list, relations_id, params)
-    except asyncpg.PostgresError as e:
-        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
-        status_code = 500
+    wkt_geom = await union_start(conn, "ST_AsText", relations_id, x, y, z, name)
 
     if wkt_geom is None:
         content = {"status": "ERROR", "message": "Relation wasn't generated"}
@@ -427,43 +590,19 @@ async def union_poly(relations_id: Annotated[str, Path(description="List of rela
                      x: float | None = None,
                      y: float | None = None,
                      z: float | None = None,
+                     name: str | None = None,
                      conn: asyncpg.Connection = Depends(get_db_connection)
                     ):
 
-    relations_id = [int(_) for _ in relations_id.split(",")]
+    wkt_geom = await union_start(conn, "ST_AsText", relations_id, x, y, z, name)
 
-    if x is None or y is None or z is None:
-        (x, y, z) = (0, 0, 0)
-        params = "0"
-    else:
-        params = "%f-%f-%f" % (x, y, z)
-
-    try:
-        async with conn.transaction():
-            for rel_id in relations_id:
-                await utils.check_polygon(conn, rel_id, x, y, z, create=True)
-    except (utils.NonExistingRelation,
-            utils.InvalidGeometry,
-            utils.InvalidSimplifiedGeometry) as e:
-        content = {"status": "ERROR", "message": "Polygon couldn't be generated - " + repr(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
-
-    sql_list = """SELECT ST_AsText(geom)
-                  FROM polygons WHERE id = ANY($1) AND params = $2"""
-    try:
-        content = await conn.fetchval(sql_list, relations_id, params)
-    except asyncpg.PostgresError as e:
-        content = "Got error from database:\n" + str(e)
-        status_code = 500
-
-    if content is None:
+    if wkt_geom is None:
         content = {"status": "ERROR", "message": "Relation wasn't generated"}
         status_code = 404
         return JSONResponse(content=content, status_code=status_code)
     else:
         poly_io = io.StringIO()
-        OsmGeom.write_multipolygon(poly_io, content)
+        OsmGeom.write_multipolygon(poly_io, wkt_geom)
         content = "polygon\n" + poly_io.getvalue() + "END"
         status_code = 200
 
@@ -474,35 +613,11 @@ async def union_wkt(relations_id: Annotated[str, Path(description="List of relat
                     x: float | None = None,
                     y: float | None = None,
                     z: float | None = None,
+                    name: str | None = None,
                     conn: asyncpg.Connection = Depends(get_db_connection)
                    ):
 
-    relations_id = [int(_) for _ in relations_id.split(",")]
-
-    if x is None or y is None or z is None:
-        (x, y, z) = (0, 0, 0)
-        params = "0"
-    else:
-        params = "%f-%f-%f" % (x, y, z)
-
-    try:
-        async with conn.transaction():
-            for rel_id in relations_id:
-                await utils.check_polygon(conn, rel_id, x, y, z, create=True)
-    except (utils.NonExistingRelation,
-            utils.InvalidGeometry,
-            utils.InvalidSimplifiedGeometry) as e:
-        content = {"status": "ERROR", "message": "Polygon couldn't be generated - " + repr(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
-
-    sql_list = """SELECT ST_AsEWKT(ST_Union(geom))
-                  FROM polygons WHERE id = ANY($1) AND params = $2"""
-    try:
-        content = await conn.fetchval(sql_list, relations_id, params)
-    except asyncpg.PostgresError as e:
-        content = "Got error from database:\n" + str(e)
-        status_code = 500
+    content = await union_start(conn, "ST_AsEWKT", relations_id, x, y, z, name)
 
     if content is None:
         content = {"status": "ERROR", "message": "Relation wasn't generated"}
@@ -513,7 +628,6 @@ async def union_wkt(relations_id: Annotated[str, Path(description="List of relat
 
     return PlainTextResponse(content=content, status_code=status_code)
 
-
 # --------------
 # Deprecated API
 # --------------
@@ -523,10 +637,11 @@ async def get_json(relations_id: Annotated[str, Query(description="List of relat
                    x: float | None = None,
                    y: float | None = None,
                    z: float | None = None,
+                   name: str | None = None,
                    conn: asyncpg.Connection = Depends(get_db_connection)
                   ):
-    if "," in relations_id:
-        return await union_json(relations_id, x, y, z, conn)
+    if "," in relations_id or name is not None:
+        return await union_json(relations_id, x, y, z, name, conn)
     else:
         return await relation_json(int(relations_id), x, y, z, conn)
 
@@ -535,10 +650,11 @@ async def get_image(relations_id: Annotated[str, Query(description="List of rela
                     x: float | None = None,
                     y: float | None = None,
                     z: float | None = None,
+                    name: str | None = None,
                     conn: asyncpg.Connection = Depends(get_db_connection)
                    ):
-    if "," in relations_id:
-        return await union_png(relations_id, x, y, z, conn)
+    if "," in relations_id or name is not None:
+        return await union_png(relations_id, x, y, z, name, conn)
     else:
         return await relation_png(int(relations_id), x, y, z, conn)
 
@@ -547,10 +663,11 @@ async def get_polygon(relations_id: Annotated[str, Query(description="List of re
                       x: float | None = None,
                       y: float | None = None,
                       z: float | None = None,
+                      name: str | None = None,
                       conn: asyncpg.Connection = Depends(get_db_connection)
                      ):
-    if "," in relations_id:
-        return await union_poly(relations_id, x, y, z, conn)
+    if "," in relations_id or name is not None:
+        return await union_poly(relations_id, x, y, z, name, conn)
     else:
         return await relation_poly(int(relations_id), x, y, z, conn)
 
@@ -559,10 +676,11 @@ async def get_wkt(relations_id: Annotated[str, Query(description="List of relati
                   x: float | None = None,
                   y: float | None = None,
                   z: float | None = None,
+                  name: str | None = None,
                   conn: asyncpg.Connection = Depends(get_db_connection)
                  ):
-    if "," in relations_id:
-        return await union_wkt(relations_id, x, y, z, conn)
+    if "," in relations_id or name is not None:
+        return await union_wkt(relations_id, x, y, z, name, conn)
     else:
         return await relation_wkt(int(relations_id), x, y, z, conn)
 

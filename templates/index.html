@@ -29,7 +29,7 @@
 
 <h1>Import of an user polygon</h1>
 <p>Use this if you want to import your own .poly file, and do union operations with OSM relations.</p>
-<form method='POST' action='import_poly.py' enctype='multipart/form-data'>
+<form method='POST' action='user_polygon' enctype='multipart/form-data'>
 <label for='name'>Name</label>
 <input type='text' name='name' id='name'>
 <label for='poly'>.poly file</label>
@@ -66,6 +66,21 @@
   {% endfor %}
 </table>
 
+<h1>List of recently uploaded polygons</h1>
+
+<p>Here are the latest uploaded polygons with this application.</p>
+<table class='sortable'>
+  <tr>
+    <th>name</th>
+    <th class='sorttable_sorted_reverse'>timestamp<span id='sorttable_sortrevind'>&nbsp;▴</span></th>
+  </tr>
+  {% for res in last_user_polygons %}
+  <tr>
+    <td><a href='user_polygon/{{ res["name"] }}'>{{ res["name"] }}</a></td>
+    <td>{{ res["timestamp"] }}</td>
+  </tr>
+  {% endfor %}
+</table>
 
 </body>
 </html>

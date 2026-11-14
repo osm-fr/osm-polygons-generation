@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>User polygon for {{ name }}</title>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <link rel="icon" type="image/png" href="../static/favicon.png">
+  <link rel="stylesheet" type="text/css" href="../static/style.css">
+  <script src="../static/sorttable.js" type="text/javascript"></script>
+</head>
+
+<body>
+<h1>List of available user polygons for name = {{ name }}</h1>
+
+<table class='sortable'>
+  <tr>
+    <th class='sorttable_sorted_reverse'>name<span id='sorttable_sortrevind'>&nbsp;▴</span></th>
+    <th>timestamp</th>
+    <th>NPoints</th>
+    <th>Length</th>
+    <th>WKT</th>
+    <th>GeoJSON</th>
+    <th>poly</th>
+    <th>Image</th>
+  </tr>
+
+  {% for res in user_polygons %}
+  <tr>
+    <td>{{ res["name"] }}</td>
+    <td>{{ res["timestamp"] }}</td>
+    <td>{{ res["npoints"] }}</td>
+    <td>{{ res["length"] }}</td>
+    {% if res["npoints"] is not none and res["npoints"] > 0 %}
+    <td><a href='{{ name }}.wkt'>WKT</a></td>
+    <td><a href='{{ name }}.geojson'>GeoJSON</a></td>
+    <td><a href='{{ name }}.poly'>poly</a></td>
+    <td><a href='{{ name }}.png'>image</a></td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+
+{% if relation_id is defined %}
+
+<h2>Union of user polygon with relation id = {{ relation_id }}</h2>
+
+<table class='sortable'>
+  <tr>
+    <th class='sorttable_sorted_reverse'>params<span id='sorttable_sortrevind'>&nbsp;▴</span></th>
+    {% for res in user_polygons %}
+    <th>{{ res["name"] }}</th>
+    {% endfor %}
+  </tr>
+
+  {% for res1 in rel_polygons %}
+  <tr>
+    <td>{{ res1["params"] }}</td>
+    {% for res2 in user_polygons %}
+    <td>
+      {% if res1["params"] == "0" %}
+      {%   set p = "name=%s" % name %}
+      {% else %}
+      {%   set val = res1["params"].split("-") %}
+      {%   set p = "x=%s&y=%s&z=%s&name=%s" % (val[0], val[1], val[2], name) %}
+      {% endif %}
+      <a href='../union/{{ relation_id }}.wkt?{{ p }}'>WKT</a>
+      <a href='../union/{{ relation_id }}.geojson?{{ p }}'>GeoJSON</a>
+      <a href='../union/{{ relation_id }}.poly?{{ p }}'>poly</a>
+      <a href='../union/{{ relation_id }}.png?{{ p }}'>image</a>
+    </td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+
+{% else %}
+
+<h2>Show polygon</h2>
+<form method='GET' action=''>
+<label for='relation_id'>Id of relation</label>
+<input type='text' name='relation_id' id='relation_id'>
+<input type='submit'>
+</form>
+
+{% endif %}
+
+</body>
+</html>
