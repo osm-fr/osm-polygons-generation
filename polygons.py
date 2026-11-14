@@ -468,6 +468,9 @@ async def union_start(conn: asyncpg.Connection,
 
     relations_id = [int(_) for _ in relations_id.split(",")]
 
+    if len(relations_id) > 300:
+        raise HTTPException(status_code=422, detail="Too many relation ids")
+
     if x is None or y is None or z is None:
         (x, y, z) = (0, 0, 0)
         params = "0"
