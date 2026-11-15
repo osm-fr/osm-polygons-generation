@@ -9,7 +9,9 @@ from threading import Lock
 import asyncpg
 import matplotlib.pyplot as plt
 import seaborn as sns
+import shapely.affinity
 import shapely.wkt
+import shapely.ops
 from starlette.concurrency import run_in_threadpool
 from tools.modules import OsmBin
 
@@ -150,6 +152,25 @@ def render_png(wkt_geom: str) -> io.BytesIO:
     geom = shapely.wkt.loads(wkt_geom)
     if geom.is_empty:
         raise ValueError("Cannot render an empty geometry")
+
+    (min_x, min_y, max_x, max_y) = geom.bounds
+
+    if max_x - min_x > 300:
+        def shift_longitudes(x, y, z=None):
+            try:
+                x = tuple(lon + 360 if lon < 0 else lon for lon in x)
+            except TypeError:
+                x = x + 360 if x < 0 else x
+
+            return (x, y) if z is None else (x, y, z)
+
+        geom = shapely.ops.transform(shift_longitudes, geom)
+
+        (min_x, min_y, max_x, max_y) = geom.bounds
+
+        # shift back -180 if most of the geometry is in the West hemisphere
+        if (min_x + max_x) / 2 > 180:
+            geom = shapely.affinity.translate(geom, xoff=-360)
 
     (min_x, min_y, max_x, max_y) = geom.bounds
     diff_x = max_x - min_x
