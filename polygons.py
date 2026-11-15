@@ -384,10 +384,14 @@ async def union_start(conn: asyncpg.Connection,
                       z: float | None = None,
                       name: str | None = None
                      ):
+    MAX_REL_IDS = 300
+
+    if len(relations_id) > MAX_REL_IDS * 11: # allow 10 digits per id
+        raise HTTPException(status_code=422, detail="Too many relation ids")
 
     relations_id = [int(_) for _ in relations_id.split(",")]
 
-    if len(relations_id) > 300:
+    if len(relations_id) > MAX_REL_IDS:
         raise HTTPException(status_code=422, detail="Too many relation ids")
 
     if x is None or y is None or z is None:
