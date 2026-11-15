@@ -63,7 +63,7 @@ async def check_polygon(conn, rel_id, x=0, y=0, z=0, create=False):
 async def create_polygon(conn, rel_id):
     tmp_table_name = f"tmp_way_poly_{int(rel_id)}"
     await conn.execute(f"DROP TABLE IF EXISTS {tmp_table_name}")
-    await conn.execute(f"CREATE TABLE {tmp_table_name} (id integer, linestring geometry);")
+    await conn.execute(f"CREATE TEMP TABLE {tmp_table_name} (id integer, linestring geometry) ON COMMIT DROP;")
 
     osmbin = OsmBin.OsmBin("/data/work/osmbin/data")
     rel_osmbin = osmbin.RelationGetWayGeom(rel_id, ["subarea", "land_area", "water_area", "collection", "admin_centre", "disputed_exclave"])

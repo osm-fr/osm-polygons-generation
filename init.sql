@@ -107,7 +107,7 @@ BEGIN
   DROP TABLE IF EXISTS tmp_way_poly;
 
   -- recup des way des relations
-  EXECUTE format('CREATE TEMP TABLE tmp_way_poly AS
+  EXECUTE format('CREATE TEMP TABLE tmp_way_poly ON COMMIT DROP AS
     SELECT * FROM "tmp_way_poly_%s"', rel_id);
 
   EXECUTE format('DROP TABLE "tmp_way_poly_%s"', rel_id);
