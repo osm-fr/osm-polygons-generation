@@ -72,13 +72,13 @@ async def root(request: Request,
 # Simple relation
 # ---------------
 
-@app.get("/relation/{relation_id}.geojson", response_class=JSONResponse)
-async def relation_json(relation_id: int,
-                        x: float | None = None,
-                        y: float | None = None,
-                        z: float | None = None,
-                        conn: asyncpg.Connection = Depends(get_db_connection)
-                       ):
+async def relation_start(conn: asyncpg.Connection,
+                         sql_func: str,
+                         relation_id: int,
+                         x: float | None = None,
+                         y: float | None = None,
+                         z: float | None = None,
+                        ):
 
     if x is None or y is None or z is None:
         (x, y, z) = (0, 0, 0)
@@ -92,27 +92,30 @@ async def relation_json(relation_id: int,
     except (utils.NonExistingRelation,
             utils.InvalidGeometry,
             utils.InvalidSimplifiedGeometry) as e:
-        content = {"status": "ERROR", "message": "Polygon couldn't be generated - " + repr(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
+        raise HTTPException(status_code=500, detail="Polygon couldn't be generated - " + repr(e))
 
-    sql_list = """SELECT ST_AsGeoJSON(geom)
-                  FROM polygons WHERE id = $1 AND params = $2"""
     try:
+        sql_list = f"""SELECT {sql_func}(ST_Union(geom))
+                       FROM polygons WHERE id = $1 AND params = $2"""
         content = await conn.fetchval(sql_list, relation_id, params)
     except asyncpg.PostgresError as e:
-        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
+        raise HTTPException(status_code=500, detail="Database error while generating polygon:" + str(e))
 
     if content is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        status_code = 200
+        raise HTTPException(status_code=404, detail="Relation wasn't generated")
 
-    return JSONResponse(content=content, status_code=status_code)
+    return content
+
+@app.get("/relation/{relation_id}.geojson", response_class=JSONResponse)
+async def relation_json(relation_id: int,
+                        x: float | None = None,
+                        y: float | None = None,
+                        z: float | None = None,
+                        conn: asyncpg.Connection = Depends(get_db_connection)
+                       ):
+
+    content = await relation_start(conn, "ST_AsGeoJSON", relation_id, x, y, z)
+    return JSONResponse(content=content)
 
 @app.get("/relation/{relation_id}.png", response_class=PNGStreamingResponse)
 async def relation_png(relation_id: int,
@@ -122,30 +125,9 @@ async def relation_png(relation_id: int,
                        conn: asyncpg.Connection = Depends(get_db_connection)
                      ):
 
-    if x is None or y is None or z is None:
-        (x, y, z) = (0, 0, 0)
-        params = "0"
-    else:
-        params = "%f-%f-%f" % (x, y, z)
-
-    sql_list = """SELECT ST_AsText(ST_Union(geom))
-                  FROM polygons WHERE id = $1 AND params = $2"""
-    try:
-        wkt_geom = await conn.fetchval(sql_list, relation_id, params)
-    except asyncpg.PostgresError as e:
-        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
-
-    if wkt_geom is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        content = await run_in_threadpool(utils.render_png, wkt_geom)
-        status_code = 200
-
-    return StreamingResponse(content=content, media_type="image/png", status_code=status_code)
+    wkt_geom = await relation_start(conn, "ST_AsText", relation_id, x, y, z)
+    content = await run_in_threadpool(utils.render_png, wkt_geom)
+    return StreamingResponse(content=content, media_type="image/png")
 
 @app.get("/relation/{relation_id}.poly", response_class=PlainTextResponse)
 async def relation_poly(relation_id: int,
@@ -155,42 +137,11 @@ async def relation_poly(relation_id: int,
                         conn: asyncpg.Connection = Depends(get_db_connection)
                        ):
 
-    if x is None or y is None or z is None:
-        (x, y, z) = (0, 0, 0)
-        params = "0"
-    else:
-        params = "%f-%f-%f" % (x, y, z)
-
-    try:
-        async with conn.transaction():
-            await utils.check_polygon(conn, relation_id, x, y, z, create=True)
-    except (utils.NonExistingRelation,
-            utils.InvalidGeometry,
-            utils.InvalidSimplifiedGeometry) as e:
-        content = "Polygon couldn't be generated - " + repr(e)
-        status_code = 500
-        return PlainTextResponse(content=content, status_code=status_code)
-
-    sql_list = """SELECT ST_AsText(geom)
-                  FROM polygons WHERE id = $1 AND params = $2"""
-    try:
-        content = await conn.fetchval(sql_list, relation_id, params)
-    except asyncpg.PostgresError as e:
-        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
-
-    if content is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        poly_io = io.StringIO()
-        OsmGeom.write_multipolygon(poly_io, content)
-        content = "polygon\n" + poly_io.getvalue() + "END"
-        status_code = 200
-
-    return PlainTextResponse(content=content, status_code=status_code)
+    content = await relation_start(conn, "ST_AsText", relation_id, x, y, z)
+    poly_io = io.StringIO()
+    OsmGeom.write_multipolygon(poly_io, content)
+    content = "polygon\n" + poly_io.getvalue() + "END"
+    return PlainTextResponse(content=content)
 
 @app.get("/relation/{relation_id}.wkt", response_class=PlainTextResponse)
 async def relation_wkt(relation_id: int,
@@ -200,40 +151,8 @@ async def relation_wkt(relation_id: int,
                        conn: asyncpg.Connection = Depends(get_db_connection)
                       ):
 
-    if x is None or y is None or z is None:
-        (x, y, z) = (0, 0, 0)
-        params = "0"
-    else:
-        params = "%f-%f-%f" % (x, y, z)
-
-    try:
-        async with conn.transaction():
-            await utils.check_polygon(conn, relation_id, x, y, z, create=True)
-    except (utils.NonExistingRelation,
-            utils.InvalidGeometry,
-            utils.InvalidSimplifiedGeometry) as e:
-        content = "Polygon couldn't be generated - " + repr(e)
-        status_code = 500
-        return PlainTextResponse(content=content, media_type="text/wkt", status_code=status_code)
-
-    sql_list = """SELECT ST_AsEWKT(geom)
-                  FROM polygons WHERE id = $1 AND params = $2"""
-    try:
-        content = await conn.fetchval(sql_list, relation_id, params)
-    except asyncpg.PostgresError as e:
-        content = {"status": "ERROR", "message": "Got error from database: " + str(e)}
-        status_code = 500
-        return JSONResponse(content=content, status_code=status_code)
-
-    if content is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        status_code = 200
-
-    return PlainTextResponse(content=content, media_type="text/wkt", status_code=status_code)
-
+    content = await relation_start(conn, "ST_AsEWKT", relation_id, x, y, z)
+    return PlainTextResponse(content=content, media_type="text/wkt")
 
 @app.get("/relation/{relation_id}", response_class=HTMLResponse)
 @app.post("/relation/{relation_id}", response_class=HTMLResponse)
