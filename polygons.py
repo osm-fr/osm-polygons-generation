@@ -383,7 +383,7 @@ async def union_start(conn: asyncpg.Connection,
                       y: float | None = None,
                       z: float | None = None,
                       name: str | None = None
-                      ):
+                     ):
 
     relations_id = [int(_) for _ in relations_id.split(",")]
 
@@ -420,6 +420,9 @@ async def union_start(conn: asyncpg.Connection,
     except asyncpg.PostgresError as e:
         raise HTTPException(status_code=500, detail="Database error while generating polygon:" + str(e))
 
+    if content is None:
+        raise HTTPException(status_code=404, detail="Relation wasn't generated")
+
     return content
 
 @app.get("/union/{relations_id}.geojson", response_class=JSONResponse)
@@ -432,15 +435,7 @@ async def union_json(relations_id: Annotated[str, Path(description="List of rela
                     ):
 
     content = await union_start(conn, "ST_AsGeoJSON", relations_id, x, y, z, name)
-
-    if content is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        status_code = 200
-
-    return JSONResponse(content=content, status_code=status_code)
+    return JSONResponse(content=content)
 
 @app.get("/union/{relations_id}.png", response_class=PNGStreamingResponse)
 async def union_png(relations_id: Annotated[str, Path(description="List of relation ids, separated by ','", pattern="^[0-9]+(,[0-9]+)*$")],
@@ -452,16 +447,8 @@ async def union_png(relations_id: Annotated[str, Path(description="List of relat
                    ):
 
     wkt_geom = await union_start(conn, "ST_AsText", relations_id, x, y, z, name)
-
-    if wkt_geom is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        content = await run_in_threadpool(utils.render_png, wkt_geom)
-        status_code = 200
-
-    return StreamingResponse(content=content, media_type="image/png", status_code=status_code)
+    content = await run_in_threadpool(utils.render_png, wkt_geom)
+    return StreamingResponse(content=content, media_type="image/png")
 
 @app.get("/union/{relations_id}.poly", response_class=PlainTextResponse)
 async def union_poly(relations_id: Annotated[str, Path(description="List of relation ids, separated by ','", pattern="^[0-9]+(,[0-9]+)*$")],
@@ -473,18 +460,10 @@ async def union_poly(relations_id: Annotated[str, Path(description="List of rela
                     ):
 
     wkt_geom = await union_start(conn, "ST_AsText", relations_id, x, y, z, name)
-
-    if wkt_geom is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        poly_io = io.StringIO()
-        OsmGeom.write_multipolygon(poly_io, wkt_geom)
-        content = "polygon\n" + poly_io.getvalue() + "END"
-        status_code = 200
-
-    return PlainTextResponse(content=content, status_code=status_code)
+    poly_io = io.StringIO()
+    OsmGeom.write_multipolygon(poly_io, wkt_geom)
+    content = "polygon\n" + poly_io.getvalue() + "END"
+    return PlainTextResponse(content=content)
 
 @app.get("/union/{relations_id}.wkt", response_class=PlainTextResponse)
 async def union_wkt(relations_id: Annotated[str, Path(description="List of relation ids, separated by ','", pattern="^[0-9]+(,[0-9]+)*$")],
@@ -496,15 +475,7 @@ async def union_wkt(relations_id: Annotated[str, Path(description="List of relat
                    ):
 
     content = await union_start(conn, "ST_AsEWKT", relations_id, x, y, z, name)
-
-    if content is None:
-        content = {"status": "ERROR", "message": "Relation wasn't generated"}
-        status_code = 404
-        return JSONResponse(content=content, status_code=status_code)
-    else:
-        status_code = 200
-
-    return PlainTextResponse(content=content, status_code=status_code)
+    return PlainTextResponse(content=content)
 
 # --------------
 # Deprecated API
