@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import io
+import math
 import re
 from threading import Lock
 
@@ -143,10 +144,33 @@ _png_lock = Lock()
 
 def render_png(wkt_geom: str) -> io.BytesIO:
     geom = shapely.wkt.loads(wkt_geom)
+    if geom.is_empty:
+        raise ValueError("Cannot render an empty geometry")
+
+    (min_x, min_y, max_x, max_y) = geom.bounds
+    diff_x = max_x - min_x
+    diff_y = max_y - min_y
+
+    center_lat = (min_y + max_y) / 2
+    cos_lat = max(abs(math.cos(math.radians(center_lat))), 0.01)
+    physical_width = diff_x * cos_lat
+    physical_height = diff_y
+
+    if physical_width <= 0 or physical_height <= 0:
+        fig_width = 10
+        fig_height = 10
+    elif physical_width >= physical_height:
+        fig_width = 16
+        fig_height = max(0.1, 16 * (physical_height / physical_width))
+    else:
+        fig_height = 16
+        fig_width = max(0.1, 16 * (physical_width / physical_height))
+
     content = io.BytesIO()
 
     with _png_lock:
-        fig, ax = plt.subplots(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        fig.subplots_adjust(left=0.04, right=0.99, bottom=0.08, top=0.99)
         try:
             if hasattr(geom, "exterior"):
                 polygons = [geom]
@@ -157,6 +181,7 @@ def render_png(wkt_geom: str) -> io.BytesIO:
                 coords = shapely.get_coordinates(polygon.exterior)
                 sns.lineplot(x=coords[:,0], y=coords[:,1], sort=False, estimator=None, ax=ax)
 
+            ax.set_aspect(1 / cos_lat, adjustable="box")
             fig.savefig(content, format="png")
         finally:
             plt.close(fig)
