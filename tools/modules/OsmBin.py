@@ -47,6 +47,7 @@
 # print bin.RelationGet(12)
 # print bin.RelationFullRecur(12)
 
+import json
 import os
 import sys
 import unittest
@@ -353,9 +354,10 @@ class OsmBin:
         RelationId = "%09d" % RelationId
         RelFolder  = self._reldir + "/" + RelationId[0:3] + "/" + RelationId[3:6] + "/"
         RelFile    = RelationId[6:9]
-        if os.path.exists(RelFolder + RelFile):
-            return eval(open(RelFolder + RelFile).read())
-        else:
+        try:
+            with open(RelFolder + RelFile, encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
             return None
 
     def RelationCreate(self, data):
