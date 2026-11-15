@@ -200,7 +200,7 @@ class OsmBin:
 
         self.node_id_size = 5
 
-    def __del__(self):
+    def close(self):
         try:
             self._fNode_crd.close()
             self._fWay_idx.close()
@@ -210,6 +210,19 @@ class OsmBin:
         if self._mode == "w":
             self._WriteFree()
             del self._lock
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+        return False
 
     def _ReadFree(self):
         self._free = {}

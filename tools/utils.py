@@ -10,6 +10,7 @@ import asyncpg
 import matplotlib.pyplot as plt
 import seaborn as sns
 import shapely.wkt
+from starlette.concurrency import run_in_threadpool
 from tools.modules import OsmBin
 
 ################################################################################
@@ -60,34 +61,37 @@ async def check_polygon(conn, rel_id, x=0, y=0, z=0, create=False):
 
     return False
 
+def read_relation_data(rel_id):
+    with OsmBin.OsmBin("/data/work/osmbin/data") as osmbin:
+        rel_osmbin = osmbin.RelationGetWayGeom(rel_id, ["subarea", "land_area", "water_area", "collection", "admin_centre", "disputed_exclave"])
+        if rel_osmbin is None:
+            raise NonExistingRelation
+
+        rel_geom = io.BytesIO()
+        for (way_id, d) in rel_osmbin.items():
+            s = "linestring(" + (",".join(["%s %s" % (n[0], n[1]) for n in d])) + ")"
+            line = "%d	%s\n" % (way_id, s)
+            rel_geom.write(line.encode("ascii"))
+        rel_geom.seek(0)
+
+        rel_osm = osmbin.RelationGet(rel_id)
+        if not rel_osm:
+            raise NonExistingRelation
+
+    return (rel_geom, rel_osm)
+
 async def create_polygon(conn, rel_id):
     tmp_table_name = f"tmp_way_poly_{int(rel_id)}"
     await conn.execute(f"DROP TABLE IF EXISTS {tmp_table_name}")
     await conn.execute(f"CREATE TEMP TABLE {tmp_table_name} (id integer, linestring geometry) ON COMMIT DROP;")
 
-    osmbin = OsmBin.OsmBin("/data/work/osmbin/data")
-    rel_osmbin = osmbin.RelationGetWayGeom(rel_id, ["subarea", "land_area", "water_area", "collection", "admin_centre", "disputed_exclave"])
-    if rel_osmbin is None:
-        raise NonExistingRelation
+    (rel_geom, rel_osm) = await run_in_threadpool(read_relation_data, rel_id)
 
-    rel_geom = io.BytesIO()
-    for (way_id, d) in rel_osmbin.items():
-        s = "LINESTRING(" + (",".join(["%s %s" % (n[0], n[1]) for n in d])) + ")"
-        line = "%d	%s\n" % (way_id, s)
-        rel_geom.write(line.encode("ascii"))
-
-    rel_geom.seek(0)
     await conn.copy_to_table(tmp_table_name, source=rel_geom)
-    sql_create = "SELECT create_polygon2($1);"
     try:
-        await conn.execute(sql_create, rel_id)
+        await conn.execute("SELECT create_polygon2($1);", rel_id)
     except asyncpg.PostgresError:
         raise InvalidGeometry()
-
-    rel_osm = osmbin.RelationGet(rel_id)
-
-    if not rel_osm:
-        raise NonExistingRelation
 
     await conn.execute("DELETE FROM relations WHERE id = $1", rel_id)
     await conn.execute("INSERT INTO relations VALUES ($1, $2)", rel_id, rel_osm["tag"])
